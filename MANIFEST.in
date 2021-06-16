@@ -1,0 +1,18 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include frappe_paystack *.css
+recursive-include frappe_paystack *.csv
+recursive-include frappe_paystack *.html
+recursive-include frappe_paystack *.ico
+recursive-include frappe_paystack *.js
+recursive-include frappe_paystack *.json
+recursive-include frappe_paystack *.md
+recursive-include frappe_paystack *.png
+recursive-include frappe_paystack *.py
+recursive-include frappe_paystack *.svg
+recursive-include frappe_paystack *.txt
+recursive-exclude frappe_paystack *.pyc
