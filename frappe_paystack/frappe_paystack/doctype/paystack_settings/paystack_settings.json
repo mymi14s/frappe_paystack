@@ -1,0 +1,70 @@
+{
+ "actions": [],
+ "autoname": "field:gateway_name",
+ "creation": "2021-06-16 07:49:35.124338",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "gateway_name",
+  "live_secret_key",
+  "column_break_3",
+  "live_public_key",
+  "live_callback_url"
+ ],
+ "fields": [
+  {
+   "fieldname": "gateway_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Payment Gateway Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "live_secret_key",
+   "fieldtype": "Password",
+   "in_list_view": 1,
+   "label": "Live Secret Key",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "live_public_key",
+   "fieldtype": "Data",
+   "label": " Live Public Key"
+  },
+  {
+   "fieldname": "live_callback_url",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Live Callback URL",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2021-06-17 21:49:56.718107",
+ "modified_by": "Administrator",
+ "module": "Frappe Paystack",
+ "name": "Paystack Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}
