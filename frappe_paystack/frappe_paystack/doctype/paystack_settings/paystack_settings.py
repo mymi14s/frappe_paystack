@@ -18,7 +18,7 @@ from frappe.integrations.utils import (make_get_request, make_post_request, crea
 
 class PaystackSettings(Document):
 
-	supported_currencies = ["NGN"]
+	supported_currencies = ["NGN", "USD", "GHS", "ZAR"]
 
 	def on_insert(self):
 		doc = frappe.new_doc("Payment Gateway")

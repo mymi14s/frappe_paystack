@@ -1,7 +1,8 @@
 ## Frappe Paystack
+Paystack payment gateway for Frappe and ERPNext
+Supported currencies = USD, NGN, ZAR, GHS
 
-Paystack payment gateway for Frappe and ERPext
-First release
+## Documentation => https://ghorz.com/blog/detail/paystack-payment-gateway-plugin-for-erpnext-and-frappe/
 #### License
 
 MIT
