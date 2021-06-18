@@ -20,12 +20,12 @@ class PaystackSettings(Document):
 
 	supported_currencies = ["NGN", "USD", "GHS", "ZAR"]
 
-	def on_insert(self):
+	def after_insert(self):
 		doc = frappe.new_doc("Payment Gateway")
 		doc.gateway_settings = "Paystack Settings"
 		doc.gateway_controller = self.name
 		doc.gateway = self.name
-		doc.save(ignore_permisions=True)
+		doc.save(ignore_permissions=True)
 
 
 	def validate(self):
