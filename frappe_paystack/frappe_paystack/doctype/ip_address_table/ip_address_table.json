@@ -1,0 +1,28 @@
+{
+ "creation": "2021-08-07 00:00:47.995323",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "ip"
+ ],
+ "fields": [
+  {
+   "fieldname": "ip",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "IP"
+  }
+ ],
+ "istable": 1,
+ "modified": "2021-08-07 00:08:22.519887",
+ "modified_by": "Administrator",
+ "module": "Frappe Paystack",
+ "name": "IP Address Table",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

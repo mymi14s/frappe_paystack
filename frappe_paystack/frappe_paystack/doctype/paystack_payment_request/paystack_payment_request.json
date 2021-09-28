@@ -31,6 +31,7 @@
    "fieldname": "reference",
    "fieldtype": "Data",
    "label": "Reference",
+   "reqd": 1,
    "unique": 1
   },
   {
@@ -128,7 +129,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-06-16 22:43:45.061852",
+ "modified": "2021-09-29 00:26:39.234072",
  "modified_by": "Administrator",
  "module": "Frappe Paystack",
  "name": "Paystack Payment Request",

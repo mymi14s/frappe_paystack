@@ -10,7 +10,9 @@
   "live_secret_key",
   "column_break_3",
   "live_public_key",
-  "live_callback_url"
+  "live_callback_url",
+  "white_listed_ip_addresses_section",
+  "ip_address"
  ],
  "fields": [
   {
@@ -43,11 +45,22 @@
    "in_list_view": 1,
    "label": "Live Callback URL",
    "reqd": 1
+  },
+  {
+   "fieldname": "white_listed_ip_addresses_section",
+   "fieldtype": "Section Break",
+   "label": "WHITE LISTED IP ADDRESSES"
+  },
+  {
+   "fieldname": "ip_address",
+   "fieldtype": "Table",
+   "label": "IP Address",
+   "options": "IP Address Table"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-06-17 21:49:56.718107",
+ "modified": "2021-09-28 13:43:00.651592",
  "modified_by": "Administrator",
  "module": "Frappe Paystack",
  "name": "Paystack Settings",

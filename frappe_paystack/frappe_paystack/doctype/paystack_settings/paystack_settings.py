@@ -21,20 +21,22 @@ class PaystackSettings(Document):
 	supported_currencies = ["NGN", "USD", "GHS", "ZAR"]
 
 	def after_insert(self):
-		doc = frappe.new_doc("Payment Gateway")
-		doc.gateway_settings = "Paystack Settings"
-		doc.gateway_controller = self.name
-		doc.gateway = self.name
-		doc.save(ignore_permissions=True)
+		# doc = frappe.new_doc("Payment Gateway")
+		# doc.gateway_settings = "Paystack Settings"
+		# doc.gateway_controller = self.name
+		# doc.gateway = self.name
+		# doc.save(ignore_permissions=True)
+		pass
 
 
 	def validate(self):
-		create_payment_gateway('Paystack')
-		call_hook_method('payment_gateway_enabled', gateway='Paystack')
+		create_payment_gateway(self.gateway_name)
+		call_hook_method('payment_gateway_enabled', gateway=self.gateway_name)
 
 	def validate_transaction_currency(self, currency):
 		if currency not in self.supported_currencies:
 			frappe.throw(_("Please select another payment method. Paystack does not support transactions in currency '{0}'").format(currency))
+
 
 	def get_payment_url(self, **kwargs):
 		'''Return payment url with several params'''
@@ -44,7 +46,7 @@ class PaystackSettings(Document):
 		# add payment gateway name
 		kwargs.update({'gateway':self.name})
 
-		return get_url("./paystack/pay?{0}".format(urlencode(kwargs)))
+		return get_url("/paystack/pay?{0}".format(urlencode(kwargs)))
 
 
 

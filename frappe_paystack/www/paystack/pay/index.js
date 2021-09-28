@@ -1,27 +1,43 @@
 // process payment
+document.addEventListener("DOMContentLoaded", function(e) {
+//do work
+let scrtag = document.createElement('script');
+scrtag.src = "https://js.paystack.co/v1/inline.js"
+scrtag.type = "text/javascript";
+document.head.appendChild(scrtag);
+// launch pay screen
+let value = document.querySelector('#paynow').value;
+preparedata(value);
+})
+
+
 let paynow = document.querySelector('#paynow').addEventListener(
   'click', e=>{
     e.preventDefault();
     // call api
-    frappe.call({
-            method: "frappe_paystack.frappe_paystack.doctype.paystack_settings.paystack_settings.get_payment_info", //dotted path to server method
-            args: {data:e.target.value},
-            callback: function(r) {
-                // code snippet
-                // console.log(r)
-                if (r.message.status == 200){
-                  // call flutter
-                  result = r.message;
-                  payWithPaystack(result.data);
-                  // });
-                } else {
-                  frappe.throw("An error occurred with your payment")
-                }
-            }
-    })
+    preparedata(e.target.value);
+
   }
 )
 
+let preparedata = (value)=>{
+  frappe.call({
+          method: "frappe_paystack.frappe_paystack.doctype.paystack_settings.paystack_settings.get_payment_info", //dotted path to server method
+          args: {data:value},
+          callback: function(r) {
+              // code snippet
+              // console.log(r)
+              if (r.message.status == 200){
+                // call flutter
+                result = r.message;
+                payWithPaystack(result.data);
+                // });
+              } else {
+                frappe.throw("An error occurred with your payment")
+              }
+          }
+  })
+}
 
 // paystack
 function payWithPaystack(data) {
@@ -44,14 +60,45 @@ function payWithPaystack(data) {
     },
     callback: function(response){
       console.log(response)
+      // complete payment
+      frappe.call({
+          method: "frappe_paystack.www.paystack.pay.webhook.make_doc", //dotted path to server method
+          args: response,
+          callback: function(r) {
+              // code snippet
+              // console.log(r);
+          }
+      })
       let message = 'Payment complete! Reference: ' + response.reference;
-      alert(message);
-      frappe.msgprint(__("Your payment has been received and will be processed shortly."));
+      // alert(message);
+      frappe.msgprint({
+          title: __('Notification'),
+          indicator: 'green',
+          message: __('Your payment has been received and will be processed shortly.')
+      });
+
       setTimeout(function(){
         window.location.href = href;
         // alert("Hello");
-      }, 6000);
+      }, 10000);
     }
   });
   handler.openIframe();
 }
+
+
+
+// frappe.call({
+//           method: "frappe_paystack.www.paystack.pay.webhook.make_doc", //dotted path to server method
+//           args: {
+//               message: "Approved",
+//               reference: "69e86bcb56",
+//               status: "success",
+//               trans: "1354472780",
+//               transaction: "1354472780",
+//               trxref: "69e86bcb56"},
+//           callback: function(r) {
+//               // code snippet
+//               console.log(r);
+//           }
+//       })
