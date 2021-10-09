@@ -92,7 +92,6 @@ def clean_data(data):
 		split_first  = data.split(',')
 		split_first[0] = split_first[0].replace('{', '')
 		split_first[-1] = split_first[-1].replace('}', '')
-		# print(split_first)
 		# make dict
 		result = {}
 		for i in split_first:
