@@ -19,7 +19,7 @@ jobs:
         KEY: ${{ secrets.SSHKEY }}
       with:
         source: "."
-        target: "/home/frappe/frappe-bench/apps"
+        target: "/home/frappe/frappe-bench/apps/"
 
     - name: Executing remote command
       uses: mymi14s/frappe_paystack@master
@@ -28,4 +28,4 @@ jobs:
         USERNAME: ${{ secrets.USERNAME }}
         PORT: ${{ secrets.PORT }}
         KEY: ${{ secrets.SSHKEY }}
-        script: ls && ld
+        script: ls
