@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: mymi14s/frappe_paystack@master
+    - uses: google-github-actions/setup-gcloud@master
 
     - name: Copy repository contents via scp
       uses: mymi14s/frappe_paystack@master
