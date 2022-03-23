@@ -21,17 +21,22 @@ class PaystackSettings(Document):
 	supported_currencies = ["NGN", "USD", "GHS", "ZAR"]
 
 	def after_insert(self):
-		# doc = frappe.new_doc("Payment Gateway")
-		# doc.gateway_settings = "Paystack Settings"
-		# doc.gateway_controller = self.name
-		# doc.gateway = self.name
-		# doc.save(ignore_permissions=True)
-		pass
+		create_payment_gateway(self.doctype)
+		if not frappe.db.exists("Payment Gateway", self.name):
+			payment_gateway = frappe.get_doc({
+				"doctype": "Payment Gateway",
+				"gateway": self.name,
+				"gateway_settings": 'Paystack Settings',
+				"gateway_controller": self.name
+			})
+			payment_gateway.insert(ignore_permissions=True)
+			call_hook_method('payment_gateway_enabled', gateway=self.name)
 
 
 	def validate(self):
-		create_payment_gateway(self.gateway_name)
-		call_hook_method('payment_gateway_enabled', gateway=self.gateway_name)
+		pass
+		# create_payment_gateway(self.gateway_name)
+		# call_hook_method('payment_gateway_enabled', gateway=self.gateway_name)
 
 	def validate_transaction_currency(self, currency):
 		if currency not in self.supported_currencies:
