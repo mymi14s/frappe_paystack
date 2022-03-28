@@ -63,8 +63,9 @@
   },
   {
    "fieldname": "reference_doctype",
-   "fieldtype": "Data",
-   "label": "Reference Doctype"
+   "fieldtype": "Link",
+   "label": "Reference Doctype",
+   "options": "DocType"
   },
   {
    "fieldname": "section_break_8",
@@ -72,8 +73,9 @@
   },
   {
    "fieldname": "reference_docname",
-   "fieldtype": "Data",
-   "label": "Reference Docname"
+   "fieldtype": "Dynamic Link",
+   "label": "Reference Docname",
+   "options": "reference_doctype"
   },
   {
    "fieldname": "gateway",
@@ -122,14 +124,15 @@
   },
   {
    "fieldname": "order_id",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "in_list_view": 1,
-   "label": "Order Id"
+   "label": "Order Id",
+   "options": "Payment Request"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-09-29 00:26:39.234072",
+ "modified": "2022-03-28 21:13:56.746691",
  "modified_by": "Administrator",
  "module": "Frappe Paystack",
  "name": "Paystack Payment Request",

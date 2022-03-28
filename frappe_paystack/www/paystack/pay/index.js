@@ -99,7 +99,12 @@ Vue.createApp({
           type: "POST",
           args: references,
           callback: function(r) {
-            me.paystackStart(r.message);
+            if(r.message.status=='Paid'){
+              frappe.throw('This order has been paid.');
+              window.location.href = history.back();
+            } else {
+              me.paystackStart(r.message);
+            }
           },
           freeze: true,
           freeze_message: "Preparing payment",
@@ -107,7 +112,7 @@ Vue.createApp({
       });
     },
     paystackStart(res){
-      let href = `/orders/${res.metadata.reference_docname}`
+      let href = `/orders/${res.metadata.reference_name}`
       let handler = PaystackPop.setup({
         key: res.key,
         email: res.email,
@@ -123,14 +128,14 @@ Vue.createApp({
         callback: function(response){
           console.log(response)
           // complete payment
-          frappe.call({
-              method: "frappe_paystack.www.paystack.pay.webhook.make_doc", //dotted path to server method
-              args: response,
-              callback: function(r) {
-                  // code snippet
-                  // console.log(r);
-              }
-          })
+          // frappe.call({
+          //     method: "frappe_paystack.api.v1.webhook", //dotted path to server method
+          //     args: response,
+          //     callback: function(r) {
+          //         // code snippet
+          //         // console.log(r);
+          //     }
+          // })
           let message = 'Payment complete! Reference: ' + response.reference;
           // alert(message);
           frappe.msgprint({
@@ -140,7 +145,7 @@ Vue.createApp({
           });
 
           setTimeout(function(){
-            window.location.href = href;
+            window.location.href = history.back();
             // alert("Hello");
           }, 10000);
         }

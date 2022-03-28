@@ -4,5 +4,6 @@
 frappe.ui.form.on('Paystack Payment Request', {
 	refresh: function(frm) {
     frm.disable_save();
+		frm.disable_form()
 	}
 });
