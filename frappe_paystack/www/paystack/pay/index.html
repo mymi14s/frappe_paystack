@@ -1,55 +1,7 @@
 
-    <div class="container">
-      <div class="py-5 text-center">
-        <img class="d-block mx-auto mb-4" src="https://fiverr-res.cloudinary.com/images/q_auto,f_auto/gigs/93790811/original/d659bf6ae224ded386238ebc8e0a77c406ff9730/integrate-paystack-payment-gateway.png" alt="" width="300" height="120">
-        <h2>Checkout</h2>
-        <!-- <p class="lead">Below is an example form built entirely with Bootstrap's form controls. Each disabled form group has a validation state that can be triggered by attempting to submit the form without completing it.</p> -->
-      </div>
+<script src="https://unpkg.com/vue@3"></script>
 
-      <div class="row">
-
-        <div class="col-md-12 order-md-1">
-          <h4 class="mb-3">Billing Information</h4>
-          <form class="needs-validation" novalidate action="void();">
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label for="firstName">Name</label>
-                <input type="text" class="form-control" id="name" placeholder="" value="{{payment_data.payer_name}}" disabled>
-              </div>
-              <div class="col-md-6 mb-3">
-                <label for="lastName">Email</label>
-                <input type="text" class="form-control" id="email" placeholder="" value="{{payment_data.payer_email}}" disabled>
-
-              </div>
-              <div class="col-md-6 mb-12">
-                <label for="lastName">Desc.</label>
-                <input type="text" class="form-control" id="desc" placeholder="" value="{{payment_data.description}}" disabled>
-
-              </div>
-              <div class="col-md-6 mb-3">
-                <label for="lastName">Order ID</label>
-                <input type="text" class="form-control" id="order_id" placeholder="" value="{{payment_data.order_id}}" disabled>
-
-              </div>
-              <div class="col-md-6 mb-3">
-                <label for="lastName">Currency</label>
-                <input type="text" class="form-control" id="currency" placeholder="" value="{{payment_data.currency}}" disabled>
-
-              </div>
-              <div class="col-md-6 mb-3">
-                <label for="lastName">Amount</label>
-                <input type="text" class="form-control" id="amount" placeholder="" value="{{payment_data.currency}} {{payment_data.amount}}" disabled>
-
-              </div>
-            </div>
-
-            <button class="btn btn-primary btn-lg btn-block" type="button"
-            value="{{payment_data}}" id="paynow">Pay Now</button>
-          </form>
-        </div>
-      </div>
-
-    </div>
-
+<div id="app"></div>
 
 <script src="https://js.paystack.co/v1/inline.js"></script>
+<script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>

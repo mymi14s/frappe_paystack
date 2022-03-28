@@ -1,12 +1,14 @@
 import frappe, requests, json
 
 @frappe.whitelist()
-def make_doc(*arg, **kwargs):
+def make_doc(**kwargs):
+    print(frappe.form_dict)
     # process_payment(**kwargs)
     frappe.enqueue(method=process_payment, queue='short', timeout=300, **kwargs)
 
 
 def process_payment(**kwargs):
+    print(frappe.form_dict)
     reference = kwargs.get('reference')
     integration_request = frappe.get_doc("Integration Request", reference)
     try:

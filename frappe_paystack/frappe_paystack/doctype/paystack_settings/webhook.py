@@ -5,7 +5,7 @@ from frappe_paystack.utils import (
 )
 
 @frappe.whitelist(allow_guest=True)
-def webhook(*args, **kwargs):
+def webhook(**kwargs):
     # print('FORM DICT \n\n',frappe.form_dict)
     form_dict = frappe.form_dict
     paystack_signature = frappe.get_request_header("x-paystack-signature")

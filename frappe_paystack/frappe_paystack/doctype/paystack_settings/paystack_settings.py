@@ -54,44 +54,6 @@ class PaystackSettings(Document):
 		return get_url("/paystack/pay?{0}".format(urlencode(kwargs)))
 
 
-
-@frappe.whitelist()
-def get_payment_info(data):
-	try:
-		data = clean_data(data)
-		# print(data)
-		payment_keys = frappe.get_doc("Paystack Settings", data.get('gateway'))
-		payment_request = frappe.get_doc(data.get('reference_doctype'), data.get('reference_docname'))
-		# print(payment_request.as_dict())
-		order = frappe.get_doc(payment_request.reference_doctype, payment_request.reference_name)
-		customer = frappe.get_doc("Customer", order.customer)
-		payload = {
-			'key': payment_keys.live_public_key,
-		    'email': data.get('payer_email'),
-		    'amount': payment_request.grand_total * 100,
-		    'ref': data.get('order_id'),
-		    'currency': payment_request.currency,
-		    'metadata':{
-				'reference_doctype': payment_request.reference_doctype,
-				'reference_docname': payment_request.reference_name,
-				'gateway': data.get('gateway'),
-				'order_id': data.get('order_id')
-	    	}
-		}
-		result = {
-			'data': {
-				'payload': payload,
-				'cart':data,
-			},
-		'status': 200
-		}
-	except Exception as e:
-		result = {
-			'status': 400,
-			'error': str(e)
-		}
-	return result
-
 def clean_data(data):
 	try:
 		split_first  = data.split(',')
