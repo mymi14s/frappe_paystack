@@ -66,15 +66,12 @@ def verify_transaction(payload):
                 """, as_dict=1)
                 if(integration_request_query):
                     integration_request = frappe.get_doc("Integration Request", integration_request_query[0].name)
-                    if integration_request.status in ['Queued', 'Authorized']:
-                        payment_request.run_method("on_payment_authorized", 'Completed')
-                        integration_request.db_set('status', 'Completed')
-                        # create log
-                        create_log(resjson)
-                        return True
-                    else:
-                        integration_request.db_set('status', 'Failed')
-                        return False
+                    payment_request.run_method("on_payment_authorized", 'Completed')
+                    integration_request.db_set('status', 'Completed')
+                    # create log
+                    create_log(resjson)
+                    return True
+                        # integration_request.db_set('status', 'Failed')
                 else:
                     return False
             else:return False
