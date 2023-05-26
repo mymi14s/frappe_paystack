@@ -1,7 +1,42 @@
+ {% extends "templates/web.html" %}
+ {% block title %}{{ _("Make Payment") }}{% endblock %}
 
-<script src="https://unpkg.com/vue@3"></script>
 
-<div id="app"></div>
+{% block page_content %}
+<div id="app">
+    <div class="container" :style="showDiv ? 'display:block' : 'display:none'">
+        <div class="row">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">*</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Reference</td>
+                        <th scope="row">[% payment_data.reference_name %]</th>
+                    </tr>
+                    <tr>
+                        <td>Amount</td>
+                        <th scope="row">[% formatCurrency(payment_data.amount, payment_data.currency) %]</th>
+                    </tr>
+                    <tr>
+                        <td>Request Date</td>
+                        <th scope="row">[% payment_data.request_date %]</th>
+                    </tr>
+                </tbody>
+                </table>
+                <button class="btn btn-primary" id="paymentBTN" @submit.prevent="">Pay</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
 
+{% block script %}
+<script src="/assets/frappe_paystack/js/vue.global.js"></script>
+<script src="/assets/frappe_paystack/js/sweetalert2@11.js"></script>
 <script src="https://js.paystack.co/v1/inline.js"></script>
-<script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="/paystack/pay/index.js"></script>
+{% endblock %}

@@ -12,8 +12,8 @@ import hashlib
 from six.moves.urllib.parse import urlencode
 from frappe.model.document import Document
 from frappe.utils import get_url, call_hook_method, cint, get_timestamp
-from frappe.integrations.utils import (make_get_request, make_post_request, create_request_log,
-	create_payment_gateway)
+from frappe.integrations.utils import (make_get_request, make_post_request, create_request_log)
+from payments.utils.utils import create_payment_gateway
 
 
 class PaystackSettings(Document):
@@ -34,10 +34,9 @@ class PaystackSettings(Document):
 
 
 	def validate(self):
-		pass
-		# create_payment_gateway(self.gateway_name)
-		# call_hook_method('payment_gateway_enabled', gateway=self.gateway_name)
-
+		self.live_callback_url = f"{frappe.utils.get_url()}/api/method/frappe_paystack.www.payment.pay.index.webhook"
+		
+		
 	def validate_transaction_currency(self, currency):
 		if currency not in self.supported_currencies:
 			frappe.throw(_("Please select another payment method. Paystack does not support transactions in currency '{0}'").format(currency))
@@ -53,6 +52,8 @@ class PaystackSettings(Document):
 
 		return get_url("/paystack/pay?{0}".format(urlencode(kwargs)))
 
+	def get_secret_key(self):
+			return self.get_password('live_secret_key')
 
 def clean_data(data):
 	try:

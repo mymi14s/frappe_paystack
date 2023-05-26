@@ -18,7 +18,9 @@ app_license = "MIT"
 
 # include js, css files in header of web template
 # web_include_css = "/assets/frappe_paystack/css/frappe_paystack.css"
-# web_include_js = "/assets/frappe_paystack/js/frappe_paystack.js"
+web_include_js = [
+    "/assets/frappe_paystack/js/web/frappe_paystack.js",
+]
 
 # include custom scss in every website theme (without file extension ".scss")
 # website_theme_scss = "frappe_paystack/public/scss/website"
@@ -89,13 +91,11 @@ app_license = "MIT"
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-#	}
-# }
+doc_events = {
+	"Payment Request": {
+		"before_insert": "frappe_paystack.events.payment_request.before_insert"
+	}
+}
 
 # Scheduled Tasks
 # ---------------

@@ -4,5 +4,5 @@
 # import frappe
 import unittest
 
-class TestPaystackPaymentRequest(unittest.TestCase):
+class TestPaystackLog(unittest.TestCase):
 	pass

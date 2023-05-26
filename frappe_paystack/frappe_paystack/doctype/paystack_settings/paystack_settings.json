@@ -8,9 +8,11 @@
  "field_order": [
   "gateway_name",
   "live_secret_key",
+  "mode_of_payment",
   "column_break_3",
   "live_public_key",
   "live_callback_url",
+  "cost_center",
   "white_listed_ip_addresses_section",
   "ip_address"
  ],
@@ -26,7 +28,6 @@
   {
    "fieldname": "live_secret_key",
    "fieldtype": "Password",
-   "in_list_view": 1,
    "label": "Live Secret Key",
    "reqd": 1
   },
@@ -44,7 +45,7 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Live Callback URL",
-   "reqd": 1
+   "read_only": 1
   },
   {
    "fieldname": "white_listed_ip_addresses_section",
@@ -56,14 +57,29 @@
    "fieldtype": "Table",
    "label": "IP Address",
    "options": "IP Address Table"
+  },
+  {
+   "fieldname": "mode_of_payment",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Mode of Payment",
+   "options": "Mode of Payment",
+   "reqd": 1
+  },
+  {
+   "description": "Cost Center may not be auto added to payment request",
+   "fieldname": "cost_center",
+   "fieldtype": "Link",
+   "label": "Cost Center",
+   "options": "Cost Center"
   }
  ],
- "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-09-28 13:43:00.651592",
+ "modified": "2023-05-26 18:36:39.527003",
  "modified_by": "Administrator",
  "module": "Frappe Paystack",
  "name": "Paystack Settings",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {
@@ -79,5 +95,6 @@
  ],
  "quick_entry": 1,
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "states": []
 }
