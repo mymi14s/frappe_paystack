@@ -80,7 +80,8 @@
    "fieldname": "cost_center",
    "fieldtype": "Link",
    "label": "Cost Center",
-   "options": "Cost Center"
+   "options": "Cost Center",
+   "reqd": 1
   },
   {
    "default": "1",
@@ -131,7 +132,7 @@
   }
  ],
  "links": [],
- "modified": "2023-05-27 09:54:35.152707",
+ "modified": "2023-05-27 21:33:12.503813",
  "modified_by": "Administrator",
  "module": "Frappe Paystack",
  "name": "Paystack Settings",

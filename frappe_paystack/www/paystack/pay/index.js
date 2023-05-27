@@ -71,9 +71,18 @@ frappe.ready((event)=>{
               type: "POST",
               args: references,
               callback: function(r) {
+                me.payment_data = r.message;
                 if(r.message.status=='Paid'){
+                  setTimeout(()=>{
+                    window.location.href = `/orders/${me.payment_data.metadata.reference_name}`
+                  }, 5000);
                   frappe.throw('This order has been paid.');
                   // window.location.href = history.back();
+                } else if (!['USD', 'NGN', 'ZAR', 'GHS'].includes(r.message.currency)){
+                  setTimeout(()=>{
+                    window.location.href = `/orders/${me.payment_data.metadata.reference_name}`
+                  }, 5000);
+                  frappe.throw(`Currency ${r.message.currency} is not supported, only 'USD', 'NGN', 'ZAR', 'GHS' supported.`);
                 } else {
                   me.payment_data = r.message;
                   me.payWithPaystack();
