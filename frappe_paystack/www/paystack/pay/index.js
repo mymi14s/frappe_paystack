@@ -8,7 +8,8 @@ frappe.ready((event)=>{
           id: '',
           payment_data: {},
           gateway: '',
-          showDiv: false
+          showDiv: false,
+          references: {}
       }
     },
     methods: {
@@ -26,7 +27,6 @@ frappe.ready((event)=>{
                   alert('Payment Terminated.');
               },
               callback: function(response){
-                  console.log(response)
                   response.gateway=me.payment_data.metadata.gateway;
                   frappe.call({
                       type: "POST",
@@ -38,14 +38,11 @@ frappe.ready((event)=>{
                           'Your payment was successful, we will issue you receipt shortly.',
                           'success'
                         )
+                        setTimeout(()=>{
+                          window.location.href = `/orders/${me.payment_data.metadata.reference_name}`
+                        }, 10000);
                       }
                   });
-                  // $('#paymentBTN').hide();
-                  // Swal.fire(
-                  //     'Successful',
-                  //     'Your payment was successful, we will issue you receipt shortly.',
-                  //     'success'
-                  // )
               }
           });
   
@@ -74,7 +71,6 @@ frappe.ready((event)=>{
               type: "POST",
               args: references,
               callback: function(r) {
-                console.log(r)
                 if(r.message.status=='Paid'){
                   frappe.throw('This order has been paid.');
                   // window.location.href = history.back();
