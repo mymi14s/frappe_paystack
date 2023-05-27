@@ -34,9 +34,11 @@ class PaystackSettings(Document):
 
 
 	def validate(self):
+		if self.test_mode:self.status='Test'
+		else:self.status='Live'
 		self.live_callback_url = f"{frappe.utils.get_url()}/api/method/frappe_paystack.www.payment.pay.index.webhook"
 		
-		
+
 	def validate_transaction_currency(self, currency):
 		if currency not in self.supported_currencies:
 			frappe.throw(_("Please select another payment method. Paystack does not support transactions in currency '{0}'").format(currency))
@@ -52,8 +54,13 @@ class PaystackSettings(Document):
 
 		return get_url("/paystack/pay?{0}".format(urlencode(kwargs)))
 
+	def get_public_key(self):
+		if self.test_mode==1: return self.test_public_key
+		else: return self.live_public_key
+
 	def get_secret_key(self):
-			return self.get_password('live_secret_key')
+		if self.test_mode==1: return self.get_password('test_secret_key')
+		else: return self.get_password('live_secret_key')
 
 def clean_data(data):
 	try:

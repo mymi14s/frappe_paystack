@@ -14,9 +14,10 @@
   "reference",
   "gateway",
   "transaction_id",
+  "payment_request",
   "section_break_8",
   "reference_doctype",
-  "reference_docname",
+  "reference_name",
   "channel",
   "column_break_11",
   "created_at",
@@ -72,12 +73,6 @@
    "fieldtype": "Section Break"
   },
   {
-   "fieldname": "reference_docname",
-   "fieldtype": "Dynamic Link",
-   "label": "Reference Docname",
-   "options": "reference_doctype"
-  },
-  {
    "fieldname": "gateway",
    "fieldtype": "Link",
    "label": "Gateway",
@@ -124,15 +119,26 @@
   },
   {
    "fieldname": "order_id",
-   "fieldtype": "Link",
+   "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Order Id",
+   "label": "Order Id"
+  },
+  {
+   "fieldname": "payment_request",
+   "fieldtype": "Link",
+   "label": "Payment Request",
    "options": "Payment Request"
+  },
+  {
+   "fieldname": "reference_name",
+   "fieldtype": "Dynamic Link",
+   "label": "Reference Name",
+   "options": "reference_doctype"
   }
  ],
  "in_create": 1,
  "links": [],
- "modified": "2023-05-26 18:48:20.558950",
+ "modified": "2023-05-27 12:38:58.016971",
  "modified_by": "Administrator",
  "module": "Frappe Paystack",
  "name": "Paystack Log",
@@ -140,13 +146,13 @@
  "owner": "Administrator",
  "permissions": [
   {
-   "delete": 1,
    "email": 1,
    "export": 1,
    "print": 1,
    "read": 1,
    "report": 1,
    "role": "System Manager",
+   "select": 1,
    "share": 1
   }
  ],

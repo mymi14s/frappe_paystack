@@ -7,12 +7,20 @@
  "engine": "InnoDB",
  "field_order": [
   "gateway_name",
-  "live_secret_key",
+  "status",
+  "test_mode",
   "mode_of_payment",
   "column_break_3",
-  "live_public_key",
-  "live_callback_url",
   "cost_center",
+  "live_callback_url",
+  "live_section_section",
+  "live_public_key",
+  "column_break_azyy6",
+  "live_secret_key",
+  "test_section_section",
+  "test_public_key",
+  "column_break_coq6v",
+  "test_secret_key",
   "white_listed_ip_addresses_section",
   "ip_address"
  ],
@@ -38,7 +46,8 @@
   {
    "fieldname": "live_public_key",
    "fieldtype": "Data",
-   "label": " Live Public Key"
+   "label": " Live Public Key",
+   "reqd": 1
   },
   {
    "fieldname": "live_callback_url",
@@ -72,10 +81,57 @@
    "fieldtype": "Link",
    "label": "Cost Center",
    "options": "Cost Center"
+  },
+  {
+   "default": "1",
+   "fieldname": "test_mode",
+   "fieldtype": "Check",
+   "label": "Test Mode"
+  },
+  {
+   "fieldname": "live_section_section",
+   "fieldtype": "Section Break",
+   "label": "Live Section"
+  },
+  {
+   "fieldname": "column_break_azyy6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "test_section_section",
+   "fieldtype": "Section Break",
+   "label": "Test Section"
+  },
+  {
+   "fieldname": "test_public_key",
+   "fieldtype": "Data",
+   "label": "Test Public Key",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_coq6v",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "test_secret_key",
+   "fieldtype": "Password",
+   "label": "Test Secret Key",
+   "reqd": 1
+  },
+  {
+   "default": "Test",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Test\nLive",
+   "read_only": 1
   }
  ],
  "links": [],
- "modified": "2023-05-26 18:36:39.527003",
+ "modified": "2023-05-27 09:54:35.152707",
  "modified_by": "Administrator",
  "module": "Frappe Paystack",
  "name": "Paystack Settings",
@@ -96,5 +152,14 @@
  "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [
+  {
+   "color": "Red",
+   "title": "Test"
+  },
+  {
+   "color": "Green",
+   "title": "Live"
+  }
+ ]
 }
