@@ -25,3 +25,5 @@ Once payment made, check Payment Request, Sales Order, Paystack Log for the data
 #### License
 
 MIT
+
+## Ready for Production
