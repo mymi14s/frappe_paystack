@@ -36,7 +36,7 @@ class PaystackSettings(Document):
 	def validate(self):
 		if self.test_mode:self.status='Test'
 		else:self.status='Live'
-		self.live_callback_url = f"{frappe.local.site}/api/method/frappe_paystack.www.paystack.pay.index.webhook"
+		self.live_callback_url = f"{frappe.utils.get_url()}/api/method/frappe_paystack.www.paystack.pay.index.webhook"
 		
 
 	def validate_transaction_currency(self, currency):
