@@ -78,8 +78,8 @@ bench migrate
 ## Reports
 
 Access transaction insights via:
-- **Paystack Payment Log**: View all payment with status, amount, reference, and timestamp.
-- **Paystack Report**: Match payments to invoices and identify discrepancies.
+- **Paystack Transactions**: View all payment with status, amount, reference, and timestamp.
+- **Customer Volume**: See total transactions for each customer.
 
 ---
 
