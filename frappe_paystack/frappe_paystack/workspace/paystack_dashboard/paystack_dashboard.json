@@ -1,0 +1,88 @@
+{
+ "charts": [],
+ "content": "[{\"id\":\"5rx2lYfcEM\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Paystack Dashboard</span>\",\"col\":12}},{\"id\":\"nr4W0kuuZU\",\"type\":\"card\",\"data\":{\"card_name\":\"Doctypes\",\"col\":4}},{\"id\":\"ye4fJv_V4O\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}}]",
+ "creation": "2025-09-27 16:45:24.172605",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "both",
+ "idx": 0,
+ "indicator_color": "green",
+ "is_hidden": 0,
+ "label": "Paystack Dashboard",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Reports",
+   "link_count": 2,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Paystack Transactions",
+   "link_count": 0,
+   "link_to": "Paystack Transactions",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Customer Paystack Volume",
+   "link_count": 0,
+   "link_to": "Customer Paystack Volume",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Doctypes",
+   "link_count": 2,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Paystack Payment Log",
+   "link_count": 0,
+   "link_to": "Paystack Payment Log",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Paystack Gateway Setting",
+   "link_count": 0,
+   "link_to": "Paystack Gateway Setting",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2025-09-27 16:47:42.754014",
+ "modified_by": "Administrator",
+ "module": "Frappe Paystack",
+ "name": "Paystack Dashboard",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 28.0,
+ "shortcuts": [],
+ "title": "Paystack Dashboard"
+}

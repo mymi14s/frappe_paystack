@@ -1,0 +1,186 @@
+{
+ "actions": [],
+ "creation": "2025-09-21 11:01:41.970331",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "company",
+  "linked_doctype",
+  "linked_docname",
+  "amount",
+  "currency",
+  "column_break_jvkw",
+  "status",
+  "retry_count",
+  "last_retry",
+  "amount_paid",
+  "currency_paid",
+  "column_break_rbnp",
+  "payment_reference",
+  "transaction_id",
+  "payment_date",
+  "payment_entry",
+  "section_break_vqwk",
+  "raw_response",
+  "tab_break_v5qn",
+  "errors",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "linked_doctype",
+   "fieldtype": "Data",
+   "label": "Linked Doctype"
+  },
+  {
+   "fieldname": "linked_docname",
+   "fieldtype": "Data",
+   "label": "Linked Docname"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "label": "Amount"
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Data",
+   "label": "Currency"
+  },
+  {
+   "default": "Pending",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Pending\nProcessed\nCompleted\nFailed"
+  },
+  {
+   "fieldname": "retry_count",
+   "fieldtype": "Int",
+   "label": "Retry Count"
+  },
+  {
+   "fieldname": "last_retry",
+   "fieldtype": "Datetime",
+   "label": "Last Retry"
+  },
+  {
+   "fieldname": "raw_response",
+   "fieldtype": "Text",
+   "label": "Raw Response",
+   "options": "JSON"
+  },
+  {
+   "fieldname": "column_break_jvkw",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "amount_paid",
+   "fieldtype": "Currency",
+   "label": "Amount Paid",
+   "read_only": 1
+  },
+  {
+   "fieldname": "currency_paid",
+   "fieldtype": "Link",
+   "label": "Currency Paid",
+   "options": "Currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_vqwk",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_rbnp",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "payment_reference",
+   "fieldtype": "Data",
+   "label": "Payment Reference",
+   "read_only": 1
+  },
+  {
+   "fieldname": "payment_date",
+   "fieldtype": "Date",
+   "label": "Payment Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "payment_entry",
+   "fieldtype": "Data",
+   "label": "Payment Entry",
+   "read_only": 1
+  },
+  {
+   "fieldname": "tab_break_v5qn",
+   "fieldtype": "Tab Break",
+   "label": "Errors"
+  },
+  {
+   "fieldname": "errors",
+   "fieldtype": "Small Text",
+   "label": "Errors"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Paystack Payment Log",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "transaction_id",
+   "fieldtype": "Data",
+   "label": "Transaction ID",
+   "read_only": 1
+  }
+ ],
+ "in_create": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2025-09-27 16:31:37.806933",
+ "modified_by": "Administrator",
+ "module": "Frappe Paystack",
+ "name": "Paystack Payment Log",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accounts Manager"
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accounts User"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

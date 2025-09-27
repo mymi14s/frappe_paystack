@@ -1,0 +1,49 @@
+
+{% extends "templates/web.html" %}
+{% block page_content %}
+<h2>My Outstanding Invoices</h2>
+{% if not invoices %}<p>No unpaid invoices</p>{% else %}
+<table class="table table-bordered">
+<thead><tr><th>Invoice</th><th>Posting Date</th><th>Due Date</th><th>Outstanding</th><th>Action</th></tr></thead>
+<tbody>
+{% for inv in invoices %}
+<tr>
+  <td><a href="/app/sales-invoice/{{ inv.name }}">{{ inv.name }}</a></td>
+  <td>{{ inv.posting_date }}</td>
+  <td>{{ inv.due_date }}</td>
+  <td>{{ frappe.utils.fmt_money(inv.outstanding_amount, currency=inv.currency) }}</td>
+  <td><button class="btn btn-sm btn-primary pay-now" data-doctype="Sales Invoice" data-docname="{{ inv.name }}">Pay Now</button></td>
+</tr>
+{% endfor %}
+</tbody></table>{% endif %}
+<hr class="my-4">
+<h2>My Payment History</h2>
+{% if not payments %}<p>No past payments yet.</p>{% else %}
+<table class="table table-striped">
+<thead><tr><th>Reference</th><th>Invoice</th><th>Amount</th><th>Currency</th><th>Status</th><th>Last Update</th><th>Receipt</th></tr></thead>
+<tbody>
+{% for log in payments %}
+<tr>
+  <td>{{ log.reference }}</td>
+  <td><a href="/app/sales-invoice/{{ log.linked_docname }}">{{ log.linked_docname }}</a></td>
+  <td>{{ frappe.utils.fmt_money(log.amount, currency=log.currency) }}</td>
+  <td>{{ log.currency }}</td>
+  <td>{{ log.status }}</td>
+  <td>{{ log.modified }}</td>
+  <td>{% if log.status in ["Processed","Completed"] %}
+      <a href="/api/method/frappe.utils.print_format.download_pdf?doctype=Paystack Payment Log&name={{ log.name }}&format=Paystack Receipt&no_letterhead=1" class="btn btn-sm btn-secondary" target="_blank">Download</a>
+      {% endif %}
+  </td>
+</tr>
+{% endfor %}
+</tbody></table>{% endif %}
+<script>
+frappe.ready(function(){ 
+  $(".pay-now").click(function(){
+    const doctype=$(this).data("doctype"); const docname=$(this).data("docname");
+    frappe.call({method:"frappe_paystack.api.create_payment_link", args:{doctype, docname},
+      callback:(r)=>{ if(r.message) window.open(r.message, "_blank"); }});
+  });
+});
+</script>
+{% endblock %}

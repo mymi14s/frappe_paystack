@@ -1,6 +1,6 @@
 {
  "actions": [],
- "autoname": "format:{gateway}-{#}",
+ "autoname": "field:gateway",
  "creation": "2024-04-24 17:59:27.773899",
  "default_view": "List",
  "doctype": "DocType",
@@ -8,26 +8,28 @@
  "engine": "InnoDB",
  "field_order": [
   "gateway",
-  "callback_url",
-  "webhook_url",
-  "column_break_0nsce",
   "enabled",
   "secret_key",
-  "public_key"
+  "public_key",
+  "column_break_0nsce",
+  "company",
+  "currency",
+  "suspense_account",
+  "mode_of_payment"
  ],
  "fields": [
   {
    "fieldname": "gateway",
-   "fieldtype": "Select",
+   "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Gateway",
-   "options": "Paystack",
-   "reqd": 1
+   "label": "Gateway Name",
+   "unique": 1
   },
   {
    "fieldname": "secret_key",
    "fieldtype": "Password",
-   "label": "Secret Key"
+   "label": "Secret Key",
+   "reqd": 1
   },
   {
    "fieldname": "public_key",
@@ -35,16 +37,6 @@
    "in_list_view": 1,
    "label": "Public Key",
    "reqd": 1
-  },
-  {
-   "fieldname": "callback_url",
-   "fieldtype": "Data",
-   "label": "Callback URL"
-  },
-  {
-   "fieldname": "webhook_url",
-   "fieldtype": "Data",
-   "label": "Webhook URL"
   },
   {
    "default": "0",
@@ -55,14 +47,43 @@
   {
    "fieldname": "column_break_0nsce",
    "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "company.default_currency",
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "label": "Currency",
+   "options": "Currency",
+   "reqd": 1
+  },
+  {
+   "fieldname": "suspense_account",
+   "fieldtype": "Link",
+   "label": "Suspense Account",
+   "options": "Account",
+   "reqd": 1
+  },
+  {
+   "fieldname": "mode_of_payment",
+   "fieldtype": "Link",
+   "label": "Mode of Payment",
+   "options": "Mode of Payment",
+   "reqd": 1
   }
  ],
  "links": [],
- "modified": "2024-04-24 18:25:56.247920",
- "modified_by": "Administrator",
+ "modified": "2025-09-27 14:31:15.509146",
+ "modified_by": "admin@example.com",
  "module": "Frappe Paystack",
  "name": "Paystack Gateway Setting",
- "naming_rule": "Expression",
+ "naming_rule": "By fieldname",
  "owner": "Administrator",
  "permissions": [
   {
@@ -78,6 +99,7 @@
    "write": 1
   }
  ],
+ "row_format": "Dynamic",
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],

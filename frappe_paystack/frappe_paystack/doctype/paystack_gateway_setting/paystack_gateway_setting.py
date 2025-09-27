@@ -24,13 +24,13 @@ class PaystackGatewaySetting(Document):
 		if self.enabled:
 			enabled_gateway = frappe.db.get_list(self.doctype, filters={
 				"enabled":1,
-				"gateway":self.gateway,
+				"company":self.company,
 				"name":["!=", self.name]
 			},
 			fields=["name"])
 			if enabled_gateway:
 				frappe.throw(f"""
-					Another {self.gateway} gateway is enabled, disable it before enabling this one.<br>
+					Another gateway is enabled, disable it before enabling this one.<br>
 					<a class="text-danger" href="/app/{self.doctype.lower().replace(' ', '-')}/{enabled_gateway[0].name}">{enabled_gateway[0].name}</a>
 				""")
 	def validate_transaction_currency(self, currency):
