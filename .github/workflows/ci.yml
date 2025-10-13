@@ -4,11 +4,11 @@ name: CI
 on:
   push:
     branches:
-      - develop
+      - version-15
   pull_request:
 
 concurrency:
-  group: develop-frappe_paystack-${{ github.event.number }}
+  group: frappe-paystack-${{ github.event.number }}
   cancel-in-progress: true
 
 jobs:
@@ -39,6 +39,11 @@ jobs:
       - name: Clone
         uses: actions/checkout@v3
 
+      - name: Find tests
+        run: |
+          echo "Finding tests"
+          grep -rn "def test" > /dev/null
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -51,7 +56,7 @@ jobs:
           check-latest: true
 
       - name: Cache pip
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/*requirements.txt', '**/pyproject.toml', '**/setup.py', '**/setup.cfg') }}
@@ -63,7 +68,7 @@ jobs:
         id: yarn-cache-dir-path
         run: 'echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT'
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         id: yarn-cache
         with:
           path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
@@ -72,7 +77,9 @@ jobs:
             ${{ runner.os }}-yarn-
 
       - name: Install MariaDB Client
-        run: sudo apt-get install mariadb-client-10.6
+        run: |
+          sudo apt update
+          sudo apt-get install mariadb-client
 
       - name: Setup
         run: |
@@ -84,9 +91,11 @@ jobs:
       - name: Install
         working-directory: /home/runner/frappe-bench
         run: |
-          bench get-app frappe_paystack $GITHUB_WORKSPACE
+          bench get-app erpnext
+          bench get-app https://github.com/mymi14s/frappe_paystack --branch=version-15
           bench setup requirements --dev
           bench new-site --db-root-password root --admin-password admin test_site
+          bench --site test_site install-app erpnext
           bench --site test_site install-app frappe_paystack
           bench build
         env:
