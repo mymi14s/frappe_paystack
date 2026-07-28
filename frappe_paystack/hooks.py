@@ -5,6 +5,7 @@ app_description = "Paystack integration for Frappe/ERPNext"
 app_email = "hackacehuawei@gmail.com"
 app_license = "mit"
 
+required_apps = ["erpnext"]
 
 
 doctype_js = {
