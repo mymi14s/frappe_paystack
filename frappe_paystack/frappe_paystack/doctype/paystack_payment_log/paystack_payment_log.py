@@ -11,9 +11,6 @@ SALES_ORDER = "Sales Order"
 SALES_INVOICE = "Sales Invoice"
 
 class PaystackPaymentLog(Document):
-    def after_insert(self):
-        frappe.db.commit()
-
     def before_insert(self):
         self.validate_payment()
         validated =  self.validate_record()
@@ -21,20 +18,20 @@ class PaystackPaymentLog(Document):
 
     def validate_record(self):
         errors = ""
+        error_id = f"{self.linked_doctype} - {self.linked_docname}"
         if self.status == "Completed":
             return ""
         elif frappe.db.exists(self.linked_doctype, {"name":self.linked_docname}):
             doc = frappe.get_doc(self.linked_doctype, self.linked_docname)
-            error_id = f"{self.linked_doctype} - {self.linked_docname}"
             if doc.docstatus == 1 and not doc.status in [
-                "Partly Paid", "Unpaid", "Overdue", "To Deliver and Bill", "To Bill"
-                    "To Deliver"]:
+                "Partly Paid", "Unpaid", "Overdue", "To Deliver and Bill", "To Bill",
+                "To Deliver"]:
                 errors = f"{error_id}: Document already settled"
             elif doc.docstatus in [0, 2]:
-                erros = f"{error_id}: Document has been cancelled or in draft."
+                errors = f"{error_id}: Document has been cancelled or in draft."
         else:
             errors = f"{error_id}: Document not found."
-        
+
         return errors
 
     def validate(self):

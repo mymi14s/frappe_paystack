@@ -9,14 +9,14 @@ def execute(filters=None):
     ]
 
     conditions = []
-    values = {}
+    values = {"company": filters.company}
 
     if filters.get("customer"):
         conditions.append("coalesce(si.customer, so.customer) = %(customer)s")
         values["customer"] = filters["customer"]
 
     q = f"""
-        select 
+        select
             coalesce(si.customer, so.customer) as customer,
             p.company,
             sum(p.amount) as total,
@@ -24,7 +24,7 @@ def execute(filters=None):
         from `tabPaystack Payment Log` p
         left join `tabSales Invoice` si on si.name = p.linked_docname
         left join `tabSales Order` so on so.name = p.linked_docname
-        where p.status in ("Processed","Completed") and p.company="{filters.company}"
+        where p.status in ("Processed","Completed") and p.company=%(company)s
         {(" and " + " and ".join(conditions)) if conditions else ""}
         group by coalesce(si.customer, so.customer), p.company
     """
