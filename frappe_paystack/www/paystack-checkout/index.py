@@ -1,4 +1,4 @@
-import frappe, json, requests
+import frappe
 
 PAYMENT_LOG = "Paystack Payment Log"
 
@@ -44,60 +44,4 @@ def get_payment_request(reference_doctype, reference_docname):
         return {'error':"Payment method is unavailable at the moment, please contact us directly.."}
     payment_request.public_key = public_key
     return payment_request
-
-@frappe.whitelist(allow_guest=True)
-def verify_transaction():
-    try:
-        transaction = frappe.form_dict
-        frappe.get_doc({
-            'doctype':"Paystack Log",
-            'message':transaction.message,
-            'status':transaction.status,
-            'reference': transaction.reference,
-            'transaction': transaction.transaction,
-        }).insert(ignore_permissions=1)
-    except Exception as e:
-        frappe.log_error(frappe.get_traceback(), 'Verify Transaction')
-
-
-
-@frappe.whitelist(allow_guest=True)
-def paystack_webhook(**kwargs):
-    """
-        End point where payment gateway sends payment info.
-    """
-    try:
-        data = frappe._dict(frappe.form_dict.data)
-        if not (frappe.db.exists("Payment Gateway Request", {"name":data.reference})):
-            secret_key = frappe.get_doc(
-                "Payment Gateway Integration Settings",
-                {'enabled':1, 'gateway':'Paystack'}
-            ).get_secret_key()
-            headers = {"Authorization": f"Bearer {secret_key}"}
-            req = requests.get(
-                f"https://api.paystack.co/transaction/verify/{data.reference}",
-                headers=headers, timeout=10
-            )
-            if req.status_code in [200, 201]:
-                response = frappe._dict(req.json())
-                data = frappe._dict(response.data)
-                metadata = frappe._dict(data.metadata)
-                frappe.get_doc({
-                    'doctype':"Payment Gateway Log",
-                    'amount':data.amount/100,
-                    'currency':data.currency,
-                    'message':response.message,
-                    'status':data.status,
-                    'payment_gateway_request': metadata.log_id,
-                    'reference': data.reference,
-                    'reference_doctype': metadata.reference_doctype,
-                    'reference_name': metadata.reference_name,
-                    'transaction_id': data.id,
-                    'data': response
-                }).insert(ignore_permissions=True)
-            else:
-                # log error
-                frappe.log_error(str(req.reason), 'Verify Transaction')
-    except Exception as e:
-        frappe.log_error(frappe.get_traceback(), 'Verify Transaction')
 
