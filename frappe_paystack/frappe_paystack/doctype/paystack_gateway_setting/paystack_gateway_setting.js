@@ -12,7 +12,7 @@ frappe.ui.form.on("Paystack Gateway Setting", {
 						},
 					}).then(() => {
 						frappe.show_alert({
-							message: __("OK — credentials are readable"),
+							message: __("OK - credentials are readable"),
 							indicator: "green",
 						});
 					});

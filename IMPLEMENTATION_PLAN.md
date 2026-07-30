@@ -1,6 +1,6 @@
-# Frappe Paystack — Phased Implementation Plan
+# Frappe Paystack - Phased Implementation Plan
 
-> **Goal**: Transform `frappe_paystack` from a minimal, self-contained integration into a production-grade, fully-featured Paystack payment gateway for Frappe/ERPNext — covering refunds/returns, standard `payments` app integration, Webshop support, subscriptions, fee accounting, security hardening, and analytics.
+> **Goal**: Transform `frappe_paystack` from a minimal, self-contained integration into a production-grade, fully-featured Paystack payment gateway for Frappe/ERPNext - covering refunds/returns, standard `payments` app integration, Webshop support, subscriptions, fee accounting, security hardening, and analytics.
 
 This plan is organized into **7 phases**, ordered by dependency and business priority. Each phase is independently shippable.
 
@@ -10,17 +10,17 @@ This plan is organized into **7 phases**, ordered by dependency and business pri
 
 | Phase | Title | Priority | Est. Effort | Dependencies |
 |-------|-------|----------|-------------|--------------|
-| **1** | Security, Reliability & Bug Fixes | P0 — Critical | Medium | None |
-| **2** | Returns, Refunds & Reversals | P0 — Critical | Large | None (standalone) |
-| **3** | Standard `payments` App Integration | P1 — High | Large | None |
-| **4** | Payment Entry & Ledger Correctness | P1 — High | Medium | Phase 3 |
-| **5** | Ecommerce / Webshop & Customer Portal | P2 — Medium | Medium | Phase 3 |
-| **6** | Subscriptions, Fees & Settlement | P2 — Medium | Large | Phase 3, 4 |
-| **7** | Analytics, Automation & Polish | P3 — Low | Medium | All prior |
+| **1** | Security, Reliability & Bug Fixes | P0 - Critical | Medium | None |
+| **2** | Returns, Refunds & Reversals | P0 - Critical | Large | None (standalone) |
+| **3** | Standard `payments` App Integration | P1 - High | Large | None |
+| **4** | Payment Entry & Ledger Correctness | P1 - High | Medium | Phase 3 |
+| **5** | Ecommerce / Webshop & Customer Portal | P2 - Medium | Medium | Phase 3 |
+| **6** | Subscriptions, Fees & Settlement | P2 - Medium | Large | Phase 3, 4 |
+| **7** | Analytics, Automation & Polish | P3 - Low | Medium | All prior |
 
 ---
 
-## Phase 1 — Security, Reliability & Bug Fixes (P0)
+## Phase 1 - Security, Reliability & Bug Fixes (P0)
 
 > **Rationale**: Before adding features, the existing code must be safe and reliable in production. Several current patterns risk duplicate payments, permission escalation, and silent failures.
 
@@ -46,7 +46,7 @@ This plan is organized into **7 phases**, ordered by dependency and business pri
 **Files**: `utils.py`, `api.py`, `paystack_payment_log.py`.
 
 ### 1.3 Remove `developer_mode` Signature Bypass
-**Problem**: `paystack_webhook()` skips signature verification when `developer_mode` is on — dangerous if left enabled in production.
+**Problem**: `paystack_webhook()` skips signature verification when `developer_mode` is on - dangerous if left enabled in production.
 
 **Tasks**:
 - [ ] Add a `test_mode` checkbox to `Paystack Gateway Setting` (separate from Frappe's developer mode).
@@ -79,7 +79,7 @@ This plan is organized into **7 phases**, ordered by dependency and business pri
 **Files**: `paystack_payment_log.py`.
 
 ### 1.6 IP Allowlisting for Webhooks
-**Problem**: No source IP validation — any server can hit the webhook endpoint.
+**Problem**: No source IP validation - any server can hit the webhook endpoint.
 
 **Tasks**:
 - [ ] Add `allowed_webhook_ips` (Small Text, one per line) to `Paystack Gateway Setting`.
@@ -132,7 +132,7 @@ This plan is organized into **7 phases**, ordered by dependency and business pri
 
 ---
 
-## Phase 2 — Returns, Refunds & Reversals (P0)
+## Phase 2 - Returns, Refunds & Reversals (P0)
 
 > **Rationale**: Currently impossible to refund a Paystack payment or reverse the ledger when a credit note is issued. This is a critical business requirement.
 
@@ -147,7 +147,7 @@ This plan is organized into **7 phases**, ordered by dependency and business pri
 - `refund_amount` (Currency)
 - `currency` (Data)
 - `status` (Select: Pending → Processed → Completed → Failed)
-- `refund_reference` (Data — Paystack refund ID)
+- `refund_reference` (Data - Paystack refund ID)
 - `refund_reason` (Small Text)
 - `reversal_payment_entry` (Link → Payment Entry)
 - `raw_response` (Text/JSON)
@@ -198,7 +198,7 @@ This plan is organized into **7 phases**, ordered by dependency and business pri
       - Create `Paystack Refund Log` (Pending).
       - Call `initiate_refund()`.
       - Update Refund Log status based on API response.
-- [ ] Add a setting `auto_refund_on_credit_note` (Check, default 0) to `Paystack Gateway Setting` — opt-in, not forced.
+- [ ] Add a setting `auto_refund_on_credit_note` (Check, default 0) to `Paystack Gateway Setting` - opt-in, not forced.
 
 **Files**: `hooks.py` (framework), new `frappe_paystack/hooks.py`, `paystack_gateway_setting.json`.
 
@@ -262,7 +262,7 @@ This plan is organized into **7 phases**, ordered by dependency and business pri
 
 ---
 
-## Phase 3 — Standard `payments` App Integration (P1)
+## Phase 3 - Standard `payments` App Integration (P1)
 
 > **Rationale**: The app currently bypasses Frappe's entire payment infrastructure. Integrating with the `payments` app unlocks the standard Payment Gateway selector, Payment Request lifecycle, and Webshop support.
 
@@ -343,7 +343,7 @@ This plan is organized into **7 phases**, ordered by dependency and business pri
 
 ---
 
-## Phase 4 — Payment Entry & Ledger Correctness (P1)
+## Phase 4 - Payment Entry & Ledger Correctness (P1)
 
 > **Rationale**: The manual Payment Entry construction in `on_update()` misses edge cases (payment terms, advances, deductions, exchange gain/loss). Using ERPNext's factory ensures correctness.
 
@@ -417,7 +417,7 @@ This plan is organized into **7 phases**, ordered by dependency and business pri
 
 ---
 
-## Phase 5 — Ecommerce / Webshop & Customer Portal (P2)
+## Phase 5 - Ecommerce / Webshop & Customer Portal (P2)
 
 > **Rationale**: Once Phase 3 is done, Webshop can use Paystack. This phase adds ecommerce-specific features and expands the customer portal.
 
@@ -507,7 +507,7 @@ This plan is organized into **7 phases**, ordered by dependency and business pri
 
 ---
 
-## Phase 6 — Subscriptions, Fees & Settlement (P2)
+## Phase 6 - Subscriptions, Fees & Settlement (P2)
 
 > **Rationale**: Paystack supports subscriptions and provides fee/settlement data. This phase adds recurring revenue support and proper financial reconciliation.
 
@@ -593,7 +593,7 @@ This plan is organized into **7 phases**, ordered by dependency and business pri
 
 ---
 
-## Phase 7 — Analytics, Automation & Polish (P3)
+## Phase 7 - Analytics, Automation & Polish (P3)
 
 > **Rationale**: Visibility, automation, and quality-of-life improvements once the core is solid.
 
@@ -717,7 +717,7 @@ Phase 3 (payments app) ──→ Phase 4 (PE/Ledger) ──→ Phase 5 (Webshop/
 ```
 
 - **Phase 1 & 2** can proceed in parallel (no dependencies).
-- **Phase 3** is the architectural pivot — Phases 4, 5, 6 all depend on it.
+- **Phase 3** is the architectural pivot - Phases 4, 5, 6 all depend on it.
 - **Phase 7** depends on all prior phases being substantially complete.
 
 ---
@@ -725,9 +725,9 @@ Phase 3 (payments app) ──→ Phase 4 (PE/Ledger) ──→ Phase 5 (Webshop/
 ## Migration Considerations
 
 - **Schema changes** (new fields, new doctypes) require `bench migrate`.
-- **Phase 3** changes the payment flow — existing Payment Logs created before the migration should still work. Add a patch to backfill `Payment Gateway` and `Payment Gateway Account` records.
-- **Phase 4** changes PE creation from manual to factory — test with existing data to ensure no inconsistencies.
-- **Phase 6** adds new doctypes — no migration of existing data needed.
+- **Phase 3** changes the payment flow - existing Payment Logs created before the migration should still work. Add a patch to backfill `Payment Gateway` and `Payment Gateway Account` records.
+- **Phase 4** changes PE creation from manual to factory - test with existing data to ensure no inconsistencies.
+- **Phase 6** adds new doctypes - no migration of existing data needed.
 - All schema changes should be in `[post_model_sync]` in `patches.txt` unless they affect the doctype model itself.
 
 ---
@@ -772,7 +772,7 @@ New fields on `Paystack Gateway Setting` across all phases:
 | `Paystack Reconciliation` | 7 | Payment Log vs Payment Entry matching |
 | `Paystack Settlement vs Ledger` | 7 | Settlement vs bank deposit comparison |
 
-*(Existing reports: `Paystack Transactions`, `Customer Paystack Volume` — keep and enhance)*
+*(Existing reports: `Paystack Transactions`, `Customer Paystack Volume` - keep and enhance)*
 
 ---
 
@@ -789,4 +789,4 @@ New fields on `Paystack Gateway Setting` across all phases:
 
 ---
 
-This plan is a living document — adjust priorities and scope as implementation progresses. Each phase is designed to be independently shippable, so you can stop after any phase and still have a working, improved app.
+This plan is a living document - adjust priorities and scope as implementation progresses. Each phase is designed to be independently shippable, so you can stop after any phase and still have a working, improved app.
