@@ -1,0 +1,13 @@
+[flake8]
+max-line-length = 110
+extend-ignore = W503, E203
+exclude =
+    .git,
+    __pycache__,
+    build,
+    dist,
+    *.egg-info,
+    frappe_paystack/public/js/vue.global.js,
+    frappe_paystack/public/js/sweetalert2@11.js
+per-file-ignores =
+    frappe_paystack/frappe_paystack/report/paystack_transactions/paystack_transactions.py:E501

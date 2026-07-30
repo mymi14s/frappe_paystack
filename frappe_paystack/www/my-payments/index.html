@@ -38,11 +38,19 @@
 {% endfor %}
 </tbody></table>{% endif %}
 <script>
-frappe.ready(function(){ 
-  $(".pay-now").click(function(){
-    const doctype=$(this).data("doctype"); const docname=$(this).data("docname");
-    frappe.call({method:"frappe_paystack.api.create_payment_link", args:{doctype, docname},
-      callback:(r)=>{ if(r.message) window.open(r.message, "_blank"); }});
+frappe.ready(function () {
+  $(".pay-now").click(function () {
+    const doctype = $(this).data("doctype");
+    const docname = $(this).data("docname");
+    frappe.call({
+      method: "frappe_paystack.api.create_payment_link",
+      args: { doctype: doctype, docname: docname },
+      callback: function (r) {
+        if (r.message) {
+          window.open(r.message, "_blank");
+        }
+      },
+    });
   });
 });
 </script>
