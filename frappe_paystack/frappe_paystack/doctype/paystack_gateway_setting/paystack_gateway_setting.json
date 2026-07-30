@@ -97,7 +97,7 @@
    "fieldname": "allowed_webhook_ips",
    "fieldtype": "Small Text",
    "label": "Allowed Webhook IPs",
-   "description": "One IP address per line. If set, only requests from these IPs will be accepted for the webhook. Leave empty to allow all (not recommended for production)."
+   "description": "One IP address per line. If set, only requests from these IPs will be accepted for the webhook. Leave empty to allow all (not recommended for production). Known Paystack webhook IPs: 52.31.139.74, 52.31.139.75, 52.31.139.76, 169.254.87.2"
   }
  ],
  "links": [],

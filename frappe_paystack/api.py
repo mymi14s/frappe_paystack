@@ -60,7 +60,6 @@ def paystack_webhook() -> None:
 
 	metadata = frappe._dict(dict(data.get("data")).get("metadata"))
 	ref = metadata.get("reference")
-	event = data.get("event", "unknown")
 
 	company = company_from_reference(ref) if ref else None
 	settings = resolve_paystack_settings(company) if company else None
@@ -101,15 +100,6 @@ def paystack_webhook() -> None:
 
 	process_webhook_event(data)
 
-	log_integration_request(
-		status="Completed",
-		url="webhook",
-		request_data=data,
-		response_data={"event": event, "reference": ref},
-		reference_doctype=LOG_DOCTYPE,
-		reference_docname=ref,
-	)
-
 	frappe.local.response["http_status_code"] = 201
 
 
@@ -140,6 +130,14 @@ def process_webhook_event(data: dict) -> None:
 		log.idempotency_key = tx.get("reference")
 		log.payment_date = tx.get("paid_at").split("T")[0]
 		log.raw_response = json.dumps(tx)
+		log.integration_request = log_integration_request(
+			status="Completed",
+			url="webhook",
+			request_data=data,
+			response_data={"reference": ref, "status": log.status},
+			reference_doctype=LOG_DOCTYPE,
+			reference_docname=name,
+		)
 		log.save(ignore_permissions=True)
 		frappe.db.commit()
 		if not frappe.db.get_value("Customer", metadata.get("customer"), "email_id"):
