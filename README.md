@@ -46,10 +46,11 @@ bench migrate
 1. Log in to your ERPNext/Frappe instance as a System Manager.
 2. Go to **Paystack Gateway Setting** (under **Accounts > Payment Gateways**).
 3. Obtain your **Public Key** and **Secret Key** from the [Paystack Dashboard](https://dashboard.paystack.com/#/settings/developers).
-4. Enter the keys in the respective fields.
-5. Set a **Suspense Account** (used to temporarily hold funds before reconciliation).
-6. Select a **Mode of Payment** linked to Paystack.
-7. **Enable** the gateway and click **Save**.
+4. Set web hook in paystack https://yoursite.com/api/method/frappe_paystack.api.paystack_webhook
+5. Enter the keys in the respective fields.
+6. Set a **Suspense Account** (used to temporarily hold funds before reconciliation).
+7. Select a **Mode of Payment** linked to Paystack.
+8. **Enable** the gateway and click **Save**.
 
 ![Logo](img/gateway.png)
 
