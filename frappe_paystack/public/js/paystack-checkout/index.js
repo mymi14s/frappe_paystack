@@ -34,15 +34,6 @@ createApp({
                 alert('Payment Terminated.');
             },
             callback: function(response){
-                console.log(response)
-                // frappe.call({
-                //     type: "POST",
-                //     method: "frappe_paystack.api.paystack_callback",
-                //     args:response,
-                //     callback: function(r) {
-                        
-                //     }
-                // });
                 $('#paymentBTN').hide();
                 Swal.fire(
                     'Successful',
