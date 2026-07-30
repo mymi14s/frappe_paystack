@@ -129,6 +129,7 @@ def get_company_row_settings(company: Optional[str]) -> Optional[Dict[str, Any]]
 		"webhook_secret": webhook_secret,
 		"test_mode": bool(row.get("test_mode")),
 		"allowed_webhook_ips": allowed_ips,
+		"auto_refund_on_credit_note": bool(row.get("auto_refund_on_credit_note")),
 		"callback_url": row.get("callback_url"),
 		"webhook_url": row.get("webhook_url"),
 		"default_currency": default_currency,
@@ -325,3 +326,80 @@ def validate_payment(doc: Document) -> Any:
 		frappe.throw(f"Paystack is not enabled for company {doc.company}")
 
 	return data
+
+
+def initiate_refund(
+	transaction_id: str,
+	amount: float,
+	currency: str,
+	company: str,
+	reason: Optional[str] = None,
+	merchant_note: Optional[str] = None,
+) -> Dict[str, Any]:
+	"""Initiate a refund via the Paystack API.
+
+	Args:
+		transaction_id: The original Paystack transaction reference.
+		amount: The amount to refund in major units (e.g. 500.00).
+		currency: The currency code (NGN, USD, etc.).
+		company: The company to resolve gateway settings for.
+		reason: Optional human-readable reason for the refund.
+		merchant_note: Optional internal note for the refund.
+
+	Returns:
+		A dict with keys: status, reference, amount, currency, raw.
+	"""
+	settings = resolve_paystack_settings(company)
+	if not settings:
+		frappe.throw(f"Paystack is not enabled for company {company}")
+
+	minor_amount = to_minor_units(amount, currency)
+	url = f"https://api.paystack.co/transaction/refund/{transaction_id}"
+	body = {"amount": minor_amount}
+	if merchant_note:
+		body["merchant_note"] = merchant_note
+
+	try:
+		req = requests.post(
+			url,
+			headers={
+				"Authorization": f"Bearer {settings.get('secret_key')}",
+				"Content-Type": "application/json",
+			},
+			json=body,
+			timeout=30,
+		)
+		data = req.json()
+		log_integration_request(
+			status="Completed" if req.ok else "Failed",
+			url=url,
+			request_data={**body, "transaction_id": transaction_id},
+			response_data=data,
+			reference_doctype="Paystack Refund Log",
+			reference_docname=None,
+		)
+	except Exception as e:
+		log_integration_request(
+			status="Failed",
+			url=url,
+			request_data={**body, "transaction_id": transaction_id},
+			response_data=None,
+			error=str(e),
+			reference_doctype="Paystack Refund Log",
+			reference_docname=None,
+		)
+		frappe.throw(f"Failed to initiate Paystack refund: {e}")
+
+	if not data.get("status"):
+		frappe.throw(
+			f"Paystack refund failed: {data.get('message', 'Unknown error')}"
+		)
+
+	refund_data = data.get("data", {})
+	return {
+		"status": refund_data.get("status", "pending"),
+		"reference": refund_data.get("reference"),
+		"amount": from_minor_units(refund_data.get("amount", 0), currency),
+		"currency": refund_data.get("currency", currency),
+		"raw": data,
+	}

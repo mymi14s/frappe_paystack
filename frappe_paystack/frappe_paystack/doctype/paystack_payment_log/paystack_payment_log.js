@@ -40,5 +40,65 @@ frappe.ui.form.on("Paystack Payment Log", {
 				}
 			});
 		}, __("Actions"));
+
+		if (frm.doc.status === "Completed" && flt(frm.doc.amount_paid) > 0) {
+			frm.add_custom_button(__("Refund"), () => {
+				show_refund_dialog(frm);
+			}, __("Actions"));
+		}
 	},
 });
+
+function show_refund_dialog(frm) {
+	const maxRefund = flt(frm.doc.amount_paid);
+
+	const dialog = new frappe.ui.Dialog({
+		title: __("Initiate Refund"),
+		fields: [
+			{
+				fieldtype: "Currency",
+				fieldname: "amount",
+				label: __("Refund Amount"),
+				reqd: 1,
+				default: maxRefund,
+				description: __("Maximum refundable: {0} {1}", [
+					maxRefund,
+					frm.doc.currency || "",
+				]),
+			},
+			{
+				fieldtype: "Small Text",
+				fieldname: "reason",
+				label: __("Reason"),
+			},
+		],
+		primary_action_label: __("Refund"),
+		primary_action(values) {
+			if (values.amount <= 0 || values.amount > maxRefund) {
+				frappe.throw(
+					__("Amount must be greater than 0 and at most {0}", [maxRefund])
+				);
+				return;
+			}
+
+			frappe.call({
+				method: "frappe_paystack.api.initiate_refund_from_log",
+				args: {
+					payment_log_name: frm.doc.name,
+					amount: values.amount,
+					reason: values.reason,
+				},
+			}).then((r) => {
+				if (r.message) {
+					frappe.show_alert({
+						message: __("Refund initiated: {0}", [r.message]),
+						indicator: "blue",
+					});
+					dialog.hide();
+					frm.refresh();
+				}
+			});
+		},
+	});
+	dialog.show();
+}

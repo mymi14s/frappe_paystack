@@ -14,6 +14,14 @@ doctype_js = {
 }
 
 
+doc_events = {
+    "Sales Invoice": {
+        "on_submit": "frappe_paystack.events.sales_invoice_on_submit",
+        "on_cancel": "frappe_paystack.events.sales_invoice_on_cancel",
+    },
+}
+
+
 website_route_rules = [
     {"from_route": "/paystack-checkout/<reference>", "to_route": "paystack-checkout"}
 ]

@@ -21,6 +21,7 @@
   "idempotency_key",
   "payment_date",
   "payment_entry",
+  "total_refunded",
   "integration_request",
   "section_break_vqwk",
   "raw_response",
@@ -122,6 +123,13 @@
    "fieldtype": "Data",
    "label": "Payment Entry",
    "read_only": 1
+  },
+  {
+   "fieldname": "total_refunded",
+   "fieldtype": "Currency",
+   "label": "Total Refunded",
+   "read_only": 1,
+   "no_copy": 1
   },
   {
    "fieldname": "tab_break_v5qn",

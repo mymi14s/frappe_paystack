@@ -18,6 +18,7 @@
   "currency",
   "suspense_account",
   "mode_of_payment",
+  "auto_refund_on_credit_note",
   "allowed_webhook_ips"
  ],
  "fields": [
@@ -92,6 +93,13 @@
    "label": "Mode of Payment",
    "options": "Mode of Payment",
    "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "auto_refund_on_credit_note",
+   "fieldtype": "Check",
+   "label": "Auto Refund on Credit Note",
+   "description": "Automatically initiate a Paystack refund when a credit note is submitted against a Paystack-paid invoice."
   },
   {
    "fieldname": "allowed_webhook_ips",
