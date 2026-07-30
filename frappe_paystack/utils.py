@@ -86,7 +86,7 @@ def get_customer_email(customer):
 
 
 
-def _get_company_row_settings(company: Optional[str]) -> Optional[Dict[str, Any]]:
+def get_company_row_settings(company: Optional[str]) -> Optional[Dict[str, Any]]:
     DOCTYPE = "Paystack Gateway Setting"
     try:
         meta = frappe.get_meta(DOCTYPE)
@@ -146,7 +146,7 @@ def _get_company_row_settings(company: Optional[str]) -> Optional[Dict[str, Any]
 
 
 def resolve_paystack_settings(company: Optional[str]) -> Optional[Dict[str, Any]]:
-    row = _get_company_row_settings(company)
+    row = get_company_row_settings(company)
     if row and row.get("secret_key"):
         return row
     return

@@ -23,7 +23,7 @@ def log_pending_payment(doc, amount, currency):
     log.insert(ignore_permissions=True)
     return log
 
-def _company_from_reference(reference):
+def company_from_reference(reference):
     try: 
         return frappe.db.get_value("Paystack Payment Log", reference, "company")
     except Exception: return None
@@ -45,7 +45,7 @@ def paystack_webhook():
     event = data.get("event", "unknown")
 
     # Resolve settings for the company
-    company = _company_from_reference(ref) if ref else None
+    company = company_from_reference(ref) if ref else None
     settings = resolve_paystack_settings(company) if company else None
 
     # --- IP allowlist check ---
@@ -84,7 +84,6 @@ def paystack_webhook():
         )
         frappe.throw("Invalid Paystack signature", frappe.PermissionError)
 
-    # --- Process the event ---
     process_webhook_event(data)
 
     # Log successful processing
@@ -111,7 +110,6 @@ def process_webhook_event(data):
         if not name:
             return
 
-        # --- Idempotency: skip if already Processed/Completed ---
         existing_status = frappe.db.get_value("Paystack Payment Log", name, "status")
         if existing_status in ("Processed", "Completed"):
             return
