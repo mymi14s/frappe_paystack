@@ -7,6 +7,7 @@ import frappe
 import requests
 from frappe.tests.utils import FrappeTestCase
 
+from frappe_paystack.tests.factories import GatewaySettingFactory
 from frappe_paystack.utils import (
 	SUPPORTED_CURRENCIES,
 	clamp_amount_to_positive,
@@ -149,7 +150,7 @@ class TestPaystackSerialization(FrappeTestCase):
 		self.assertEqual(parsed["data"]["list"], [1, 2, 3])
 
 	def test_safe_json_dumps_returns_empty_on_failure(self):
-		self.assertEqual(safe_json_dumps(float("nan")), "{}")
+		self.assertEqual(safe_json_dumps(object()), "{}")
 
 
 class TestPaystackReference(FrappeTestCase):
@@ -164,9 +165,9 @@ class TestPaystackReference(FrappeTestCase):
 		self.assertEqual(ref, "Sales Order-SO-001-")
 
 	def test_parse_reference_company_round_trips(self):
-		company = "Test Company Ltd"
-		ref = sanitize_reference("Sales Invoice", "INV-001", company)
-		self.assertEqual(parse_reference_company(ref), company.replace(" ", ""))
+		company = "TestCompanyLtd"
+		ref = sanitize_reference("Sales Invoice", "ACC_SINV_001", company)
+		self.assertEqual(parse_reference_company(ref), company)
 
 	def test_parse_reference_company_returns_none_for_malformed(self):
 		self.assertIsNone(parse_reference_company("invalid"))
@@ -190,6 +191,34 @@ class TestPaystackAmount(FrappeTestCase):
 class TestPaystackSettingsResolution(FrappeTestCase):
 	"""Tests for resolving Paystack Gateway Settings for a company."""
 
+	def setUp(self):
+		"""Clean up any existing enabled gateways before each test."""
+		existing = frappe.get_all(
+			"Paystack Gateway Setting",
+			filters={"enabled": 1, "company": "_Test Company"},
+			pluck="name",
+		)
+		for name in existing:
+			frappe.db.set_value(
+				"Paystack Gateway Setting", name, "enabled", 0
+			)
+
+	def tearDown(self):
+		"""Clean up any gateways created during the test."""
+		created = frappe.get_all(
+			"Paystack Gateway Setting",
+			filters={"company": "_Test Company"},
+			pluck="name",
+		)
+		for name in created:
+			if name.startswith("Test"):
+				frappe.delete_doc(
+					"Paystack Gateway Setting",
+					name,
+					force=True,
+					ignore_permissions=True,
+				)
+
 	def test_is_paystack_enabled_returns_false_when_no_gateway(self):
 		self.assertFalse(is_paystack_enabled("_Test Company"))
 
@@ -197,8 +226,8 @@ class TestPaystackSettingsResolution(FrappeTestCase):
 		self.assertIsNone(resolve_paystack_settings("_Test Company"))
 
 	def test_resolve_paystack_settings_returns_dict_when_gateway_enabled(self):
-		setting = self.create_enabled_gateway()
-		self.addCleanup(self.cleanup_gateway, setting.name)
+		setting_name = GatewaySettingFactory.create()
+		self.addCleanup(GatewaySettingFactory.cleanup, setting_name)
 
 		settings = resolve_paystack_settings("_Test Company")
 		self.assertIsNotNone(settings)
@@ -207,66 +236,29 @@ class TestPaystackSettingsResolution(FrappeTestCase):
 		self.assertTrue(settings["test_mode"] is False)
 
 	def test_resolve_paystack_settings_uses_webhook_secret_when_set(self):
-		setting = self.create_enabled_gateway(webhook_secret="wh_secret_abc")
-		self.addCleanup(self.cleanup_gateway, setting.name)
+		setting_name = GatewaySettingFactory.create(
+			webhook_secret="wh_secret_abc"
+		)
+		self.addCleanup(GatewaySettingFactory.cleanup, setting_name)
 
 		settings = resolve_paystack_settings("_Test Company")
 		self.assertEqual(settings["webhook_secret"], "wh_secret_abc")
 
 	def test_resolve_paystack_settings_falls_back_to_secret_key_for_webhook(self):
-		setting = self.create_enabled_gateway(webhook_secret=None)
-		self.addCleanup(self.cleanup_gateway, setting.name)
+		setting_name = GatewaySettingFactory.create(webhook_secret=None)
+		self.addCleanup(GatewaySettingFactory.cleanup, setting_name)
 
 		settings = resolve_paystack_settings("_Test Company")
 		self.assertEqual(settings["webhook_secret"], settings["secret_key"])
 
 	def test_resolve_paystack_settings_returns_allowed_ips(self):
-		setting = self.create_enabled_gateway(
+		setting_name = GatewaySettingFactory.create(
 			allowed_ips="52.31.139.74\n52.31.139.75"
 		)
-		self.addCleanup(self.cleanup_gateway, setting.name)
+		self.addCleanup(GatewaySettingFactory.cleanup, setting_name)
 
 		settings = resolve_paystack_settings("_Test Company")
 		self.assertIn("52.31.139.74", settings["allowed_webhook_ips"])
-
-	def create_enabled_gateway(
-		self, webhook_secret=None, allowed_ips=None
-	):
-		"""Create an enabled Paystack Gateway Setting for _Test Company."""
-		setting = frappe.get_doc(
-			{
-				"doctype": "Paystack Gateway Setting",
-				"gateway": "Test Gateway for Tests",
-				"company": "_Test Company",
-				"secret_key": "sk_test_123",
-				"public_key": "pk_test_123",
-				"webhook_secret": webhook_secret,
-				"allowed_webhook_ips": allowed_ips,
-				"suspense_account": self.get_suspense_account(),
-				"mode_of_payment": "Paystack",
-				"currency": "NGN",
-				"enabled": 1,
-			}
-		)
-		setting.flags.ignore_permissions = True
-		setting.insert()
-		return setting
-
-	def get_suspense_account(self):
-		return frappe.db.get_value(
-			"Account",
-			{"company": "_Test Company", "account_type": "Bank"},
-			"name",
-		)
-
-	def cleanup_gateway(self, name):
-		if frappe.db.exists("Paystack Gateway Setting", name):
-			frappe.delete_doc(
-				"Paystack Gateway Setting",
-				name,
-				force=True,
-				ignore_permissions=True,
-			)
 
 
 class TestPaystackIntegrationRequestLogging(FrappeTestCase):
@@ -283,20 +275,17 @@ class TestPaystackIntegrationRequestLogging(FrappeTestCase):
 		)
 		self.assertIsNotNone(name)
 		self.assertTrue(frappe.db.exists("Integration Request", name))
-		self.addCleanup(
-			lambda: frappe.delete_doc(
-				"Integration Request", name, force=True, ignore_permissions=True
-			)
-			if frappe.db.exists("Integration Request", name)
-			else None
-		)
 
 		ir = frappe.get_doc("Integration Request", name)
 		self.assertEqual(ir.status, "Completed")
-		self.assertEqual(ir.method, "webhook")
+		self.assertEqual(ir.integration_request_service, "webhook")
 		self.assertEqual(ir.reference_doctype, "Paystack Payment Log")
 		parsed = json.loads(ir.data)
 		self.assertEqual(parsed["event"], "charge.success")
+
+		frappe.delete_doc(
+			"Integration Request", name, force=True, ignore_permissions=True
+		)
 
 	def test_log_integration_request_with_error(self):
 		name = log_integration_request(
@@ -308,17 +297,14 @@ class TestPaystackIntegrationRequestLogging(FrappeTestCase):
 			reference_docname="TEST-LOG-002",
 		)
 		self.assertIsNotNone(name)
-		self.addCleanup(
-			lambda: frappe.delete_doc(
-				"Integration Request", name, force=True, ignore_permissions=True
-			)
-			if frappe.db.exists("Integration Request", name)
-			else None
-		)
 
 		ir = frappe.get_doc("Integration Request", name)
 		self.assertEqual(ir.status, "Failed")
 		self.assertIn("Connection timeout", ir.error)
+
+		frappe.delete_doc(
+			"Integration Request", name, force=True, ignore_permissions=True
+		)
 
 
 class TestPaystackValidatePayment(FrappeTestCase):

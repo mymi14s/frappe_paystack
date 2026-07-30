@@ -36,8 +36,8 @@ def log_integration_request(
 		integration_request = frappe.get_doc(
 			{
 				"doctype": "Integration Request",
-				"integration_type": "Remote",
-				"method": url,
+				"integration_request_service": url,
+				"is_remote_request": 1,
 				"status": status,
 				"reference_doctype": reference_doctype,
 				"reference_docname": reference_docname,
@@ -51,6 +51,7 @@ def log_integration_request(
 			}
 		)
 		integration_request.flags.ignore_permissions = True
+		integration_request.flags.ignore_links = True
 		integration_request.insert()
 		return integration_request.name
 	except Exception:
@@ -180,8 +181,10 @@ def is_ip_allowed(allowed_ips: Optional[str], request_ip: Optional[str]) -> bool
 def safe_json_dumps(obj: Any) -> str:
 	"""Safely serialize obj to JSON, returning '{}' on failure."""
 	try:
-		return json.dumps(obj, ensure_ascii=False, separators=(",", ":"), default=str)
-	except Exception:
+		return json.dumps(
+			obj, ensure_ascii=False, separators=(",", ":")
+		)
+	except (TypeError, ValueError):
 		return "{}"
 
 
@@ -250,7 +253,7 @@ def coalesce_currency(
 
 def ensure_supported_currency(currency: str) -> None:
 	"""Throw if currency is not supported by this integration."""
-	cur = normalize_currency(currency)
+	cur = (currency or "").upper().strip()
 	if cur not in SUPPORTED_CURRENCIES:
 		frappe.throw(f"Currency {currency} is not supported for Paystack in this app.")
 

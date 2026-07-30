@@ -8,6 +8,9 @@ app_license = "mit"
 required_apps = ["erpnext"]
 
 
+after_server_startup = "frappe_paystack.patches.apply_all_patches"
+
+
 doctype_js = {
     "Sales Invoice": "public/js/sales_invoice.js",
     "Sales Order": "public/js/sales_order.js",

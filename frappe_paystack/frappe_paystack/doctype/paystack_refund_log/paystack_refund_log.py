@@ -129,6 +129,8 @@ class PaystackRefundLog(Document):
 			self.db_set("status", "Completed", update_modified=True)
 			self.reload()
 			self.submit()
+			self.update_payment_log_total_refunded()
+			self.send_refund_receipt_email()
 		except Exception:
 			frappe.log_error(
 				"Failed to create reversal Payment Entry from Paystack Refund Log",
@@ -155,6 +157,17 @@ class PaystackRefundLog(Document):
 				f"Cannot delete this log because it is linked to Payment Entry "
 				f"{self.reversal_payment_entry}. Cancel the Payment Entry first."
 			)
+
+	def update_payment_log_total_refunded(self) -> None:
+		"""Update the total_refunded field on the linked Payment Log."""
+		total = get_total_refunded(self.payment_log)
+		frappe.db.set_value(
+			"Paystack Payment Log",
+			self.payment_log,
+			"total_refunded",
+			total,
+			update_modified=False,
+		)
 
 	def send_refund_receipt_email(self) -> None:
 		"""Email the customer a refund receipt when the refund is Completed."""
