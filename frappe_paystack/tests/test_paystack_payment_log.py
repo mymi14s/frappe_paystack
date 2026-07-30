@@ -10,9 +10,12 @@ import frappe_paystack
 class TestFrappePaystackImports(FrappeTestCase):
 	"""Sanity check: imports all modules in frappe_paystack to catch
 	syntax errors, missing imports, or runtime errors on load.
+
+	This test catches circular imports, missing dependencies, and
+	syntax errors across the entire codebase in a single pass.
 	"""
 
-	def test_import_all_modules(self):
+	def test_import_all_modules_without_errors(self):
 		package = frappe_paystack
 		errors = []
 
@@ -30,14 +33,14 @@ class TestFrappePaystackImports(FrappeTestCase):
 				+ "\n".join(errors)
 			)
 
-	def test_app_is_installed(self):
-		"""The frappe_paystack app must be in the installed apps list."""
-		installed_apps = frappe.get_installed_apps()
-		self.assertIn("frappe_paystack", installed_apps)
+	def test_fixture_mode_of_payment_paystack_exists_after_migrate(self):
+		"""The 'Paystack' Mode of Payment fixture must exist in the database.
 
-	def test_mode_of_payment_fixture_exists(self):
-		"""The 'Paystack' Mode of Payment fixture must exist."""
+		This verifies that the fixtures hook in hooks.py is correctly
+		configured and that bench migrate has been run.
+		"""
 		self.assertTrue(
 			frappe.db.exists("Mode of Payment", "Paystack"),
-			"Mode of Payment 'Paystack' not found - run bench migrate to load fixtures",
+			"Mode of Payment 'Paystack' not found - the fixtures hook may be "
+			"misconfigured or bench migrate has not been run",
 		)

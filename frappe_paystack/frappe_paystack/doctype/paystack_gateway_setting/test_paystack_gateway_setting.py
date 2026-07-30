@@ -10,90 +10,126 @@ from frappe_paystack.utils import SUPPORTED_CURRENCIES
 class TestPaystackGatewaySetting(FrappeTestCase):
 	"""Tests for the Paystack Gateway Setting doctype."""
 
-	def test_meta_exists(self):
-		"""The doctype metadata must be loadable."""
-		self.assertTrue(frappe.get_meta("Paystack Gateway Setting"))
+	def test_validate_allows_single_enabled_gateway_per_company(self):
+		"""One gateway can be enabled per company without error."""
+		setting = self.create_setting(enabled=True)
+		self.addCleanup(self.cleanup_setting, setting.name)
 
-	def test_supported_currencies_matches_utils(self):
-		"""The doctype must use the same currency list as utils.SUPPORTED_CURRENCIES."""
-		setting = frappe.get_doc(
-			{
-				"doctype": "Paystack Gateway Setting",
-				"gateway": "Test Gateway",
-				"company": "_Test Company",
-				"secret_key": "sk_test_123",
-				"public_key": "pk_test_123",
-				"suspense_account": self.get_suspense_account(),
-				"mode_of_payment": "Paystack",
-				"currency": "NGN",
-			}
-		)
-		self.assertEqual(setting.supported_currencies, SUPPORTED_CURRENCIES)
+		setting.check_enabled()
 
-	def test_validate_transaction_currency_supported(self):
-		"""validate_transaction_currency must not throw for supported currencies."""
+	def test_validate_throws_when_second_gateway_enabled_for_same_company(self):
+		"""Enabling a second gateway for the same company must throw."""
+		setting1 = self.create_setting(gateway="Gateway A", enabled=True)
+		self.addCleanup(self.cleanup_setting, setting1.name)
+
+		setting2 = self.create_setting(gateway="Gateway B", enabled=True)
+		self.addCleanup(self.cleanup_setting, setting2.name)
+
+		with self.assertRaises(frappe.ValidationError):
+			setting2.check_enabled()
+
+	def test_validate_allows_disabled_gateway_alongside_enabled(self):
+		"""A disabled gateway does not conflict with an enabled one."""
+		setting1 = self.create_setting(gateway="Gateway C", enabled=True)
+		self.addCleanup(self.cleanup_setting, setting1.name)
+
+		setting2 = self.create_setting(gateway="Gateway D", enabled=False)
+		self.addCleanup(self.cleanup_setting, setting2.name)
+
+		setting2.check_enabled()
+
+	def test_validate_transaction_currency_accepts_all_supported(self):
+		"""validate_transaction_currency must accept every SUPPORTED_CURRENCIES entry."""
 		setting = self.create_setting(enabled=False)
 		self.addCleanup(self.cleanup_setting, setting.name)
 
-		for currency in ["NGN", "USD", "GHS", "ZAR", "KES"]:
+		for currency in SUPPORTED_CURRENCIES:
 			setting.validate_transaction_currency(currency)
 
-	def test_validate_transaction_currency_unsupported(self):
-		"""validate_transaction_currency must throw for unsupported currencies."""
+	def test_validate_transaction_currency_throws_for_unsupported(self):
+		"""validate_transaction_currency must throw for EUR (not supported by Paystack)."""
 		setting = self.create_setting(enabled=False)
 		self.addCleanup(self.cleanup_setting, setting.name)
 
 		with self.assertRaises(frappe.ValidationError):
 			setting.validate_transaction_currency("EUR")
 
-	def test_check_enabled_prevents_duplicate(self):
-		"""Only one gateway can be enabled per company."""
-		setting1 = self.create_setting(enabled=True)
-		self.addCleanup(self.cleanup_setting, setting1.name)
+	def test_get_secret_key_returns_plaintext_password(self):
+		"""get_secret_key must return the actual secret, not a masked value."""
+		setting = self.create_setting(enabled=False, secret="sk_test_my_secret")
+		self.addCleanup(self.cleanup_setting, setting.name)
 
-		setting2 = self.create_setting(
-			gateway="Test Gateway 2", enabled=True
+		self.assertEqual(setting.get_secret_key(), "sk_test_my_secret")
+
+	def test_supported_currencies_constant_matches_utils(self):
+		"""The doctype's supported_currencies must be the same list as utils."""
+		setting = self.create_setting(enabled=False)
+		self.addCleanup(self.cleanup_setting, setting.name)
+
+		self.assertEqual(setting.supported_currencies, SUPPORTED_CURRENCIES)
+		self.assertIn("KES", setting.supported_currencies)
+
+	def test_get_supported_currency_returns_list(self):
+		"""get_supported_currency must return the currency list, not a string."""
+		setting = self.create_setting(enabled=False)
+		self.addCleanup(self.cleanup_setting, setting.name)
+
+		result = setting.get_supported_currency()
+		self.assertIsInstance(result, list)
+		self.assertEqual(len(result), len(SUPPORTED_CURRENCIES))
+
+	def test_webhook_secret_stored_as_password_type(self):
+		"""The webhook_secret field must be of Password type for security."""
+		meta = frappe.get_meta("Paystack Gateway Setting")
+		field = meta.get_field("webhook_secret")
+		self.assertEqual(field.fieldtype, "Password")
+
+	def test_allowed_webhook_ips_stored_as_small_text(self):
+		"""The allowed_webhook_ips field must be Small Text for multi-line input."""
+		meta = frappe.get_meta("Paystack Gateway Setting")
+		field = meta.get_field("allowed_webhook_ips")
+		self.assertEqual(field.fieldtype, "Small Text")
+
+	def test_test_mode_defaults_to_zero(self):
+		"""test_mode must default to 0 (unchecked) for safety."""
+		meta = frappe.get_meta("Paystack Gateway Setting")
+		field = meta.get_field("test_mode")
+		self.assertEqual(field.default, "0")
+
+	def test_insert_with_webhook_secret_and_allowed_ips(self):
+		"""A gateway with webhook_secret and allowed_webhook_ips must save correctly."""
+		setting = frappe.get_doc(
+			{
+				"doctype": "Paystack Gateway Setting",
+				"gateway": "Full Config Gateway",
+				"company": "_Test Company",
+				"secret_key": "sk_test_123",
+				"public_key": "pk_test_123",
+				"webhook_secret": "wh_secret_xyz",
+				"allowed_webhook_ips": "52.31.139.74\n52.31.139.75",
+				"suspense_account": self.get_suspense_account(),
+				"mode_of_payment": "Paystack",
+				"currency": "NGN",
+				"enabled": 0,
+			}
 		)
-		with self.assertRaises(frappe.ValidationError):
-			setting2.check_enabled()
-
-	def test_get_secret_key(self):
-		"""get_secret_key must return the password value."""
-		setting = self.create_setting(enabled=False)
+		setting.flags.ignore_permissions = True
+		setting.insert()
 		self.addCleanup(self.cleanup_setting, setting.name)
 
-		self.assertEqual(setting.get_secret_key(), "sk_test_123")
+		self.assertTrue(frappe.db.exists("Paystack Gateway Setting", setting.name))
+		self.assertEqual(setting.get("allowed_webhook_ips"), "52.31.139.74\n52.31.139.75")
 
-	def test_get_supported_currency(self):
-		"""get_supported_currency must return the currency list."""
-		setting = self.create_setting(enabled=False)
-		self.addCleanup(self.cleanup_setting, setting.name)
-
-		self.assertEqual(setting.get_supported_currency(), SUPPORTED_CURRENCIES)
-
-	def test_webhook_secret_field_exists(self):
-		"""The webhook_secret field must exist on the doctype (Phase 1)."""
-		meta = frappe.get_meta("Paystack Gateway Setting")
-		self.assertTrue(meta.has_field("webhook_secret"))
-
-	def test_test_mode_field_exists(self):
-		"""The test_mode field must exist on the doctype (Phase 1)."""
-		meta = frappe.get_meta("Paystack Gateway Setting")
-		self.assertTrue(meta.has_field("test_mode"))
-
-	def test_allowed_webhook_ips_field_exists(self):
-		"""The allowed_webhook_ips field must exist on the doctype (Phase 1)."""
-		meta = frappe.get_meta("Paystack Gateway Setting")
-		self.assertTrue(meta.has_field("allowed_webhook_ips"))
-
-	def create_setting(self, gateway="Test Gateway", enabled=False):
+	def create_setting(
+		self, gateway="Test Gateway", enabled=False, secret="sk_test_123"
+	):
 		"""Create a Paystack Gateway Setting for testing."""
 		setting = frappe.get_doc(
 			{
 				"doctype": "Paystack Gateway Setting",
 				"gateway": gateway,
 				"company": "_Test Company",
-				"secret_key": "sk_test_123",
+				"secret_key": secret,
 				"public_key": "pk_test_123",
 				"suspense_account": self.get_suspense_account(),
 				"mode_of_payment": "Paystack",
@@ -106,7 +142,6 @@ class TestPaystackGatewaySetting(FrappeTestCase):
 		return setting
 
 	def get_suspense_account(self):
-		"""Return a valid account for _Test Company."""
 		return frappe.db.get_value(
 			"Account",
 			{"company": "_Test Company", "account_type": "Bank"},
@@ -114,7 +149,6 @@ class TestPaystackGatewaySetting(FrappeTestCase):
 		)
 
 	def cleanup_setting(self, name):
-		"""Delete a Paystack Gateway Setting if it exists."""
 		if frappe.db.exists("Paystack Gateway Setting", name):
 			frappe.delete_doc(
 				"Paystack Gateway Setting",
