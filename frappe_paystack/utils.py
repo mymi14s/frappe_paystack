@@ -16,6 +16,50 @@ MINOR_FACTORS = {
 }
 
 
+# ---------------------------------------------------------------------------
+# Integration Request logging
+# ---------------------------------------------------------------------------
+
+def log_integration_request(
+	status: str,
+	url: str,
+	request_data: Any,
+	response_data: Any = None,
+	error: Optional[str] = None,
+	reference_doctype: Optional[str] = None,
+	reference_docname: Optional[str] = None,
+):
+	"""Create an Integration Request record for audit/debugging.
+
+	Args:
+		status: "Completed" | "Failed" | "Pending"
+		url: the Paystack API URL or "webhook" for incoming webhooks
+		request_data: dict or str — the payload sent/received
+		response_data: dict or str — the response received
+		error: optional error traceback/message
+		reference_doctype: e.g. "Paystack Payment Log"
+		reference_docname: the linked document name
+	"""
+	try:
+		integration_request = frappe.get_doc({
+			"doctype": "Integration Request",
+			"integration_type": "Remote",
+			"method": url,
+			"status": status,
+			"reference_doctype": reference_doctype,
+			"reference_docname": reference_docname,
+			"data": safe_json_dumps(request_data) if not isinstance(request_data, str) else request_data,
+			"output": safe_json_dumps(response_data) if response_data and not isinstance(response_data, str) else (response_data or ""),
+			"error": error or "",
+		})
+		integration_request.flags.ignore_permissions = True
+		integration_request.insert()
+		return integration_request.name
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "Failed to log Integration Request")
+		return None
+
+
 
 @frappe.whitelist()
 def get_customer_contact(customer):
@@ -69,10 +113,27 @@ def _get_company_row_settings(company: Optional[str]) -> Optional[Dict[str, Any]
         except Exception:
             pass
 
+    # Use dedicated webhook_secret if set, otherwise fall back to secret_key
+    webhook_secret = None
+    try:
+        webhook_secret = row.get_password("webhook_secret") if hasattr(row, "get_password") and row.get("webhook_secret") else None
+    except Exception:
+        webhook_secret = None
+    if not webhook_secret:
+        webhook_secret = row.get_password("secret_key")
+
+    allowed_ips = None
+    try:
+        allowed_ips = row.get("allowed_webhook_ips") or None
+    except Exception:
+        allowed_ips = None
+
     return {
         "public_key": row.get("public_key"),
         "secret_key": row.get_password("secret_key"),
-        "webhook_secret": row.get_password("secret_key"),
+        "webhook_secret": webhook_secret,
+        "test_mode": bool(row.get("test_mode")),
+        "allowed_webhook_ips": allowed_ips,
         "callback_url": row.get("callback_url"),
         "webhook_url": row.get("webhook_url"),
         "default_currency": default_currency,
@@ -105,6 +166,19 @@ def verify_signature(payload: bytes, signature: Optional[str], secret: str) -> b
         return False
     expected = hmac_sha512(payload, secret)
     return hmac.compare_digest(expected, signature)
+
+
+def is_ip_allowed(allowed_ips: Optional[str], request_ip: Optional[str]) -> bool:
+    """
+    Check if the incoming request IP is in the allowed list.
+    If allowed_ips is empty/None, allow all (backward compatibility).
+    """
+    if not allowed_ips:
+        return True
+    if not request_ip:
+        return False
+    allowed = [ip.strip() for ip in allowed_ips.split("\n") if ip.strip()]
+    return request_ip in allowed
 
 
 def safe_json_dumps(obj: Any) -> str:
@@ -221,8 +295,28 @@ def validate_payment(doc):
         secret = resolve_paystack_settings(doc.company)
         if not secret:frappe.throw(f"Paystack is not enabled for company {doc.company}")
         url=f"https://api.paystack.co/transaction/verify/{doc.transaction_id}"
-        req = requests.get(url, headers={"Authorization": f"Bearer {secret.get('secret_key')}"}, timeout=15)
-        data = req.json()
+        try:
+            req = requests.get(url, headers={"Authorization": f"Bearer {secret.get('secret_key')}"}, timeout=15)
+            data = req.json()
+            log_integration_request(
+                status="Completed" if req.ok else "Failed",
+                url=url,
+                request_data={"transaction_id": doc.transaction_id},
+                response_data=data,
+                reference_doctype="Paystack Payment Log",
+                reference_docname=doc.name,
+            )
+        except Exception as e:
+            log_integration_request(
+                status="Failed",
+                url=url,
+                request_data={"transaction_id": doc.transaction_id},
+                response_data=None,
+                error=str(e),
+                reference_doctype="Paystack Payment Log",
+                reference_docname=doc.name,
+            )
+            frappe.throw(f"Failed to verify Paystack transaction: {e}")
     else:
         frappe.throw(f"Paystack is not enabled for company {doc.company}")
     

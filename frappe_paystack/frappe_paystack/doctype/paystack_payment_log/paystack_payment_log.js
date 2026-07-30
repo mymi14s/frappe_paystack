@@ -22,7 +22,6 @@ frappe.ui.form.on('Paystack Payment Log', {
     );
   },
   action_buttons(frm) {
-    console.log
     if (!frm.doc.transaction_id) return;
 
     frm.add_custom_button(__('Open in Paystack'), () => {

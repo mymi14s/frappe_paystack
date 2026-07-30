@@ -1,7 +1,8 @@
 
 import frappe, hmac, hashlib, json
 from frappe_paystack.utils import (
-    resolve_paystack_settings, is_paystack_enabled, coalesce_currency, resolve_paystack_settings
+    resolve_paystack_settings, is_paystack_enabled, coalesce_currency,
+    verify_signature, is_ip_allowed, log_integration_request,
 )
 
 LOG_DOCTYPE = "Paystack Payment Log"
@@ -34,21 +35,67 @@ def verify_paystack_signature(payload, signature, secret):
 @frappe.whitelist(allow_guest=True)
 def paystack_webhook():
     data = frappe.request.get_json() or {}
-    if frappe.local.conf.developer_mode:
-        process_webhook_event(data)
-        frappe.local.response["http_status_code"] = 201
-        return
-    signature = frappe.get_request_header("x-paystack-signature")
     payload = frappe.request.data or b""
+    signature = frappe.get_request_header("x-paystack-signature")
+    request_ip = frappe.local.request_ip if hasattr(frappe.local, "request_ip") else None
+
+    # Extract reference early for logging
     metadata = frappe._dict(dict(data.get("data")).get("metadata"))
-    ref = metadata.get("reference") 
-    if not ref: frappe.throw("Invalid webhook payload")
-    company = _company_from_reference(ref)
+    ref = metadata.get("reference")
+    event = data.get("event", "unknown")
+
+    # Resolve settings for the company
+    company = _company_from_reference(ref) if ref else None
     settings = resolve_paystack_settings(company) if company else None
-    if not settings: frappe.throw("No Paystack settings for company", frappe.PermissionError)
-    if not verify_paystack_signature(payload, signature, settings["secret_key"]):
+
+    # --- IP allowlist check ---
+    if settings and not is_ip_allowed(settings.get("allowed_webhook_ips"), request_ip):
+        log_integration_request(
+            status="Failed",
+            url="webhook",
+			request_data=data,
+			error=f"IP {request_ip} not in allowlist",
+			reference_doctype=LOG_DOCTYPE,
+			reference_docname=ref,
+        )
+        frappe.throw("IP not allowed", frappe.PermissionError)
+
+    # --- Signature verification (always, no developer_mode bypass) ---
+    if not settings:
+        log_integration_request(
+            status="Failed",
+            url="webhook",
+            request_data=data,
+            error="No Paystack settings for company",
+            reference_doctype=LOG_DOCTYPE,
+            reference_docname=ref,
+        )
+        frappe.throw("No Paystack settings for company", frappe.PermissionError)
+
+    webhook_secret = settings.get("webhook_secret") or settings.get("secret_key")
+    if not verify_signature(payload, signature, webhook_secret):
+        log_integration_request(
+            status="Failed",
+            url="webhook",
+            request_data=data,
+            error="Invalid Paystack signature",
+            reference_doctype=LOG_DOCTYPE,
+            reference_docname=ref,
+        )
         frappe.throw("Invalid Paystack signature", frappe.PermissionError)
+
+    # --- Process the event ---
     process_webhook_event(data)
+
+    # Log successful processing
+    log_integration_request(
+        status="Completed",
+        url="webhook",
+        request_data=data,
+        response_data={"event": event, "reference": ref},
+        reference_doctype=LOG_DOCTYPE,
+        reference_docname=ref,
+    )
 
     frappe.local.response["http_status_code"] = 201
 
@@ -63,12 +110,19 @@ def process_webhook_event(data):
         name = ref if frappe.db.exists("Paystack Payment Log", ref) else None
         if not name:
             return
+
+        # --- Idempotency: skip if already Processed/Completed ---
+        existing_status = frappe.db.get_value("Paystack Payment Log", name, "status")
+        if existing_status in ("Processed", "Completed"):
+            return
+
         log = frappe.get_doc("Paystack Payment Log", name)
         log.status = "Processed" if tx.get("status") == "success" else "Failed"
         log.amount_paid = amount
         log.currency_paid = currency
         log.payment_reference = tx.get("reference")
         log.transaction_id = tx.get("reference")
+        log.idempotency_key = tx.get("reference")
         log.payment_date = tx.get("paid_at").split("T")[0]
         log.raw_response = json.dumps(tx)
         log.save(ignore_permissions=True)

@@ -106,7 +106,3 @@ createApp({
 
   }
 }).mount('#app')
-
-
-
-document.querySelector("paymentBTN")

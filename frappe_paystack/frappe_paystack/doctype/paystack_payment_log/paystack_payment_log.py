@@ -83,7 +83,6 @@ class PaystackPaymentLog(Document):
         if paid_amount <= 0:
             return
         try:
-            frappe.set_user("administrator")
             GATE_WAY_SETTINGS = self.get_payment_public_key()
             pe = frappe.new_doc("Payment Entry")
             pe.payment_type = "Receive"
@@ -95,7 +94,7 @@ class PaystackPaymentLog(Document):
             if inv.doctype == SALES_INVOICE:
                 pe.paid_from = inv.debit_to
             elif inv.doctype == SALES_ORDER:
-                account = get_paid_to_account(inv.customer, inv.company)                    
+                account = get_paid_to_account(inv.customer, inv.company)
                 pe.paid_from = account
             pe.paid_to = GATE_WAY_SETTINGS.get("suspense_account")
             pe.paid_amount = paid_amount
@@ -112,13 +111,13 @@ class PaystackPaymentLog(Document):
                 "reference_name": inv.name,
                 "allocated_amount": paid_amount
             })
-            pe.save(ignore_permissions=True)
+            pe.flags.ignore_permissions = True
+            pe.save()
             pe.submit()
             self.db_set("payment_entry", pe.name, update_modified=False)
             self.db_set("status", "Completed", update_modified=True)
             self.reload()
             self.submit()
-            frappe.set_user("Guest")
         except Exception as e:
             frappe.log_error("Failed to create Payment Entry from Paystack log", f"""{self.name} - {frappe.get_traceback()}""")
 
@@ -162,7 +161,16 @@ class PaystackPaymentLog(Document):
         return data
     
     def on_trash(self):
-        frappe.throw("You are not allowed to cancel this document")
+        if self.status in ("Processed", "Completed"):
+            frappe.throw(
+                "Cannot delete a Processed or Completed Payment Log. "
+                "Cancel the linked Payment Entry first."
+            )
+        if self.payment_entry:
+            frappe.throw(
+                f"Cannot delete this log because it is linked to Payment Entry {self.payment_entry}. "
+                "Cancel the Payment Entry first."
+            )
 
     
     @frappe.whitelist()

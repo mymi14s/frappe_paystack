@@ -9,13 +9,16 @@
  "field_order": [
   "gateway",
   "enabled",
+  "test_mode",
   "secret_key",
   "public_key",
+  "webhook_secret",
   "column_break_0nsce",
   "company",
   "currency",
   "suspense_account",
-  "mode_of_payment"
+  "mode_of_payment",
+  "allowed_webhook_ips"
  ],
  "fields": [
   {
@@ -39,10 +42,23 @@
    "reqd": 1
   },
   {
+   "fieldname": "webhook_secret",
+   "fieldtype": "Password",
+   "label": "Webhook Secret",
+   "description": "Dedicated secret for verifying Paystack webhook signatures. If left empty, the Secret Key is used."
+  },
+  {
    "default": "0",
    "fieldname": "enabled",
    "fieldtype": "Check",
    "label": "Enabled"
+  },
+  {
+   "default": "0",
+   "fieldname": "test_mode",
+   "fieldtype": "Check",
+   "label": "Test Mode",
+   "description": "Use Paystack test keys. Webhook signatures are still verified."
   },
   {
    "fieldname": "column_break_0nsce",
@@ -76,6 +92,12 @@
    "label": "Mode of Payment",
    "options": "Mode of Payment",
    "reqd": 1
+  },
+  {
+   "fieldname": "allowed_webhook_ips",
+   "fieldtype": "Small Text",
+   "label": "Allowed Webhook IPs",
+   "description": "One IP address per line. If set, only requests from these IPs will be accepted for the webhook. Leave empty to allow all (not recommended for production)."
   }
  ],
  "links": [],

@@ -18,8 +18,10 @@
   "column_break_rbnp",
   "payment_reference",
   "transaction_id",
+  "idempotency_key",
   "payment_date",
   "payment_entry",
+  "integration_request",
   "section_break_vqwk",
   "raw_response",
   "tab_break_v5qn",
@@ -145,7 +147,24 @@
    "fieldname": "transaction_id",
    "fieldtype": "Data",
    "label": "Transaction ID",
-   "read_only": 1
+   "read_only": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "idempotency_key",
+   "fieldtype": "Data",
+   "label": "Idempotency Key",
+   "read_only": 1,
+   "hidden": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "integration_request",
+   "fieldtype": "Link",
+   "label": "Integration Request",
+   "options": "Integration Request",
+   "read_only": 1,
+   "no_copy": 1
   }
  ],
  "in_create": 1,
