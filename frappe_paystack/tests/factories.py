@@ -29,7 +29,8 @@ def get_suspense_account(company: str = TEST_COMPANY) -> str:
 	"""
 	Return a valid account for the test company.
 
-	Tries Bank accounts first, then any non-group account.
+	Tries Bank accounts first, then any non-group account,
+	then falls back to known test account names.
 	"""
 	account = frappe.db.get_value(
 		"Account",
@@ -48,6 +49,15 @@ def get_suspense_account(company: str = TEST_COMPANY) -> str:
 			{"company": company},
 			"name",
 		)
+	if not account:
+		for name in [
+			"_Test Bank EUR - _TC",
+			"_Test Bank - _TC",
+			"_Test Cash - _TC",
+		]:
+			if frappe.db.exists("Account", name):
+				account = name
+				break
 	return account
 
 
