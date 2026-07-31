@@ -71,7 +71,6 @@ class TestPaystackGatewaySetting(FrappeTestCase):
 			}
 		)
 		setting2.flags.ignore_permissions = True
-		setting2.flags.ignore_links = True
 
 		with self.assertRaises(frappe.ValidationError):
 			setting2.check_enabled()
@@ -80,22 +79,11 @@ class TestPaystackGatewaySetting(FrappeTestCase):
 		"""A disabled gateway does not conflict with an enabled one."""
 		GatewaySettingFactory.create(gateway="Gateway C")
 
-		setting2 = frappe.get_doc(
-			{
-				"doctype": "Paystack Gateway Setting",
-				"gateway": "Gateway D",
-				"company": "_Test Company",
-				"secret_key": "sk_test_789",
-				"public_key": "pk_test_789",
-				"mode_of_payment": "Paystack",
-				"currency": "NGN",
-				"enabled": 0,
-			}
+		setting2_name = GatewaySettingFactory.create(
+			gateway="Gateway D", enabled=False
 		)
-		setting2.flags.ignore_permissions = True
-		setting2.flags.ignore_links = True
-		setting2.insert()
 
+		setting2 = frappe.get_doc("Paystack Gateway Setting", setting2_name)
 		setting2.check_enabled()
 
 	def test_validate_transaction_currency_accepts_all_supported(self):
