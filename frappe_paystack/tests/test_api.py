@@ -36,9 +36,14 @@ class TestPaystackWebhookProcessing(FrappeTestCase):
 
 	@patch(VALIDATE_PAYMENT_PATCH)
 	def test_process_webhook_success_updates_all_log_fields(self, mock_vp):
-		"""A charge.success webhook must set status, amount, references, and date."""
+		"""
+		A charge.success webhook must set status, amount,
+		references, and date.
+		"""
 		mock_vp.return_value = {"status": True, "data": {"status": "success"}}
-		log_name = PaymentLogFactory.create(status="Pending", amount=1000)
+		log_name = PaymentLogFactory.create(
+			status="Pending", amount=1000, transaction_id="ref_pay_001"
+		)
 		self.addCleanup(PaymentLogFactory.cleanup, log_name)
 
 		webhook_data = {

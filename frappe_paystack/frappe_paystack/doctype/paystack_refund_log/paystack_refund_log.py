@@ -134,7 +134,6 @@ class PaystackRefundLog(Document):
 				"Failed to create reversal Payment Entry from Paystack Refund Log",
 				f"{self.name} - {frappe.get_traceback()}",
 			)
-			self.db_set("status", "Failed", update_modified=True)
 			self.db_set(
 				"errors",
 				"Reversal Payment Entry creation failed. See Error Log for details.",
