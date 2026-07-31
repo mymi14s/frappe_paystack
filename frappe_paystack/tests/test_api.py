@@ -19,6 +19,11 @@ from frappe_paystack.tests.factories import (
 )
 from frappe_paystack.utils import hmac_sha512
 
+VALIDATE_PAYMENT_PATCH = (
+	"frappe_paystack.frappe_paystack.doctype.paystack_payment_log."
+	"paystack_payment_log.PaystackPaymentLog.validate_payment"
+)
+
 
 class TestPaystackWebhookProcessing(FrappeTestCase):
 	"""Tests for webhook event processing and idempotency."""
@@ -27,8 +32,10 @@ class TestPaystackWebhookProcessing(FrappeTestCase):
 		self.gateway_name = GatewaySettingFactory.create()
 		self.addCleanup(GatewaySettingFactory.cleanup, self.gateway_name)
 
-	def test_process_webhook_success_updates_all_log_fields(self):
+	@patch(VALIDATE_PAYMENT_PATCH)
+	def test_process_webhook_success_updates_all_log_fields(self, mock_vp):
 		"""A charge.success webhook must set status, amount, references, and date."""
+		mock_vp.return_value = {"status": True, "data": {"status": "success"}}
 		log_name = PaymentLogFactory.create(status="Pending", amount=1000)
 		self.addCleanup(PaymentLogFactory.cleanup, log_name)
 
@@ -56,8 +63,10 @@ class TestPaystackWebhookProcessing(FrappeTestCase):
 		self.assertEqual(log.payment_date, "2024-06-15")
 		self.assertIn("ref_pay_001", log.raw_response)
 
-	def test_process_webhook_failure_sets_failed_status(self):
+	@patch(VALIDATE_PAYMENT_PATCH)
+	def test_process_webhook_failure_sets_failed_status(self, mock_vp):
 		"""A charge.failed webhook must set the log status to Failed."""
+		mock_vp.return_value = {"status": True, "data": {"status": "success"}}
 		log_name = PaymentLogFactory.create(status="Pending", amount=1000)
 		self.addCleanup(PaymentLogFactory.cleanup, log_name)
 
@@ -78,8 +87,10 @@ class TestPaystackWebhookProcessing(FrappeTestCase):
 		log = frappe.get_doc("Paystack Payment Log", log_name)
 		self.assertEqual(log.status, "Failed")
 
-	def test_process_webhook_idempotency_prevents_duplicate_processing(self):
+	@patch(VALIDATE_PAYMENT_PATCH)
+	def test_process_webhook_idempotency_prevents_duplicate_processing(self, mock_vp):
 		"""Processing the same webhook twice must not change the log after the first time."""
+		mock_vp.return_value = {"status": True, "data": {"status": "success"}}
 		log_name = PaymentLogFactory.create(status="Pending", amount=1000)
 		self.addCleanup(PaymentLogFactory.cleanup, log_name)
 
@@ -108,8 +119,10 @@ class TestPaystackWebhookProcessing(FrappeTestCase):
 		self.assertEqual(log.amount_paid, original_amount)
 		self.assertEqual(log.raw_response, original_raw)
 
-	def test_process_webhook_skips_already_completed_log(self):
+	@patch(VALIDATE_PAYMENT_PATCH)
+	def test_process_webhook_skips_already_completed_log(self, mock_vp):
 		"""A webhook for a Completed log must be silently skipped."""
+		mock_vp.return_value = {"status": True, "data": {"status": "success"}}
 		log_name = PaymentLogFactory.create_completed(
 			amount=1000, amount_paid=1000
 		)
@@ -132,8 +145,10 @@ class TestPaystackWebhookProcessing(FrappeTestCase):
 		log = frappe.get_doc("Paystack Payment Log", log_name)
 		self.assertEqual(log.status, "Completed")
 
-	def test_process_webhook_with_usd_currency(self):
+	@patch(VALIDATE_PAYMENT_PATCH)
+	def test_process_webhook_with_usd_currency(self, mock_vp):
 		"""A webhook in USD must set currency_paid to USD."""
+		mock_vp.return_value = {"status": True, "data": {"status": "success"}}
 		log_name = PaymentLogFactory.create(
 			status="Pending", amount=100, currency="USD"
 		)
@@ -187,8 +202,10 @@ class TestPaystackWebhookProcessing(FrappeTestCase):
 		}
 		process_webhook_event(webhook_data)
 
-	def test_company_from_reference_returns_company_for_existing_log(self):
+	@patch(VALIDATE_PAYMENT_PATCH)
+	def test_company_from_reference_returns_company_for_existing_log(self, mock_vp):
 		"""company_from_reference returns the company for a real log."""
+		mock_vp.return_value = {"status": True, "data": {"status": "success"}}
 		log_name = PaymentLogFactory.create(status="Pending", amount=1000)
 		self.addCleanup(PaymentLogFactory.cleanup, log_name)
 
@@ -202,11 +219,13 @@ class TestPaystackWebhookProcessing(FrappeTestCase):
 class TestPaystackPaymentLink(FrappeTestCase):
 	"""Tests for payment link creation against real Sales Invoices."""
 
+	@patch(VALIDATE_PAYMENT_PATCH)
 	@patch("frappe_paystack.api.resolve_paystack_settings")
 	def test_create_payment_link_for_sales_invoice_uses_outstanding(
-		self, mock_settings
+		self, mock_settings, mock_vp
 	):
 		"""create_payment_link defaults to outstanding_amount for a Sales Invoice."""
+		mock_vp.return_value = {"status": True, "data": {"status": "success"}}
 		mock_settings.return_value = {
 			"public_key": "pk_test_123",
 			"secret_key": "sk_test_123",
@@ -228,9 +247,13 @@ class TestPaystackPaymentLink(FrappeTestCase):
 		self.assertEqual(log.company, "_Test Company")
 		self.assertAlmostEqual(log.amount, 5000, places=2)
 
+	@patch(VALIDATE_PAYMENT_PATCH)
 	@patch("frappe_paystack.api.resolve_paystack_settings")
-	def test_create_payment_link_with_explicit_partial_amount(self, mock_settings):
+	def test_create_payment_link_with_explicit_partial_amount(
+		self, mock_settings, mock_vp
+	):
 		"""create_payment_link with an explicit amount creates a partial payment log."""
+		mock_vp.return_value = {"status": True, "data": {"status": "success"}}
 		mock_settings.return_value = {
 			"public_key": "pk_test_123",
 			"secret_key": "sk_test_123",
@@ -248,9 +271,13 @@ class TestPaystackPaymentLink(FrappeTestCase):
 		log = frappe.get_doc("Paystack Payment Log", log_name)
 		self.assertEqual(log.amount, 3000.0)
 
+	@patch(VALIDATE_PAYMENT_PATCH)
 	@patch("frappe_paystack.api.resolve_paystack_settings")
-	def test_create_payment_link_returns_valid_checkout_url(self, mock_settings):
+	def test_create_payment_link_returns_valid_checkout_url(
+		self, mock_settings, mock_vp
+	):
 		"""The returned URL must contain /paystack-checkout/ and the log name."""
+		mock_vp.return_value = {"status": True, "data": {"status": "success"}}
 		mock_settings.return_value = {
 			"public_key": "pk_test_123",
 			"secret_key": "sk_test_123",
@@ -268,8 +295,10 @@ class TestPaystackPaymentLink(FrappeTestCase):
 		self.assertIn("/paystack-checkout/", url)
 		self.assertTrue(frappe.db.exists("Paystack Payment Log", log_name))
 
-	def test_create_payment_link_throws_when_not_enabled(self):
+	@patch(VALIDATE_PAYMENT_PATCH)
+	def test_create_payment_link_throws_when_not_enabled(self, mock_vp):
 		"""create_payment_link must throw when Paystack is not configured."""
+		mock_vp.return_value = {"status": True, "data": {"status": "success"}}
 		sinv_name = SalesInvoiceFactory.create(rate=1000)
 		self.addCleanup(SalesInvoiceFactory.cleanup, sinv_name)
 
@@ -280,11 +309,13 @@ class TestPaystackPaymentLink(FrappeTestCase):
 class TestPaystackValidatePaymentLink(FrappeTestCase):
 	"""Tests for the validate_payment_link endpoint used by the checkout page."""
 
+	@patch(VALIDATE_PAYMENT_PATCH)
 	@patch("frappe_paystack.api.resolve_paystack_settings")
 	def test_validate_payment_link_returns_data_for_existing_log(
-		self, mock_settings
+		self, mock_settings, mock_vp
 	):
 		"""validate_payment_link returns checkout data including gateway settings."""
+		mock_vp.return_value = {"status": True, "data": {"status": "success"}}
 		mock_settings.return_value = {
 			"public_key": "pk_test_123",
 			"secret_key": "sk_test_123",
@@ -317,10 +348,12 @@ class TestPaystackWebhookSignatureFlow(FrappeTestCase):
 		self.gateway_name = GatewaySettingFactory.create()
 		self.addCleanup(GatewaySettingFactory.cleanup, self.gateway_name)
 
-	def test_webhook_with_valid_signature_processes_event(self):
+	@patch(VALIDATE_PAYMENT_PATCH)
+	def test_webhook_with_valid_signature_processes_event(self, mock_vp):
 		"""A webhook with a valid signature must process the event and update the log."""
 		from frappe_paystack.api import paystack_webhook
 
+		mock_vp.return_value = {"status": True, "data": {"status": "success"}}
 		log_name = PaymentLogFactory.create(status="Pending", amount=1000)
 		self.addCleanup(PaymentLogFactory.cleanup, log_name)
 
@@ -362,10 +395,12 @@ class TestPaystackWebhookSignatureFlow(FrappeTestCase):
 		self.assertEqual(log.status, "Processed")
 		self.assertEqual(log.amount_paid, 200.0)
 
-	def test_webhook_with_invalid_signature_throws(self):
+	@patch(VALIDATE_PAYMENT_PATCH)
+	def test_webhook_with_invalid_signature_throws(self, mock_vp):
 		"""A webhook with an invalid signature must throw PermissionError."""
 		from frappe_paystack.api import paystack_webhook
 
+		mock_vp.return_value = {"status": True, "data": {"status": "success"}}
 		log_name = PaymentLogFactory.create(status="Pending", amount=1000)
 		self.addCleanup(PaymentLogFactory.cleanup, log_name)
 
@@ -438,10 +473,12 @@ class TestPaystackWebhookSignatureFlow(FrappeTestCase):
 			with self.assertRaises(frappe.PermissionError):
 				paystack_webhook()
 
-	def test_webhook_ip_not_in_allowlist_throws(self):
+	@patch(VALIDATE_PAYMENT_PATCH)
+	def test_webhook_ip_not_in_allowlist_throws(self, mock_vp):
 		"""A webhook from a non-allowlisted IP must throw PermissionError."""
 		from frappe_paystack.api import paystack_webhook
 
+		mock_vp.return_value = {"status": True, "data": {"status": "success"}}
 		log_name = PaymentLogFactory.create(status="Pending", amount=1000)
 		self.addCleanup(PaymentLogFactory.cleanup, log_name)
 
