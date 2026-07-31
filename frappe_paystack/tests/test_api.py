@@ -70,7 +70,7 @@ class TestPaystackWebhookProcessing(FrappeTestCase):
 		self.assertEqual(log.payment_reference, tx_ref)
 		self.assertEqual(log.transaction_id, tx_ref)
 		self.assertEqual(log.idempotency_key, tx_ref)
-		self.assertEqual(log.payment_date, "2024-06-15")
+		self.assertEqual(str(log.payment_date), "2024-06-15")
 		self.assertIn(tx_ref, log.raw_response)
 
 	@patch(VALIDATE_PAYMENT_PATCH)

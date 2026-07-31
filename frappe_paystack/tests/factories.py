@@ -328,6 +328,16 @@ class GatewaySettingFactory:
 		"""
 		ensure_mode_of_payment()
 
+		suspense = get_suspense_account(company)
+		if not suspense:
+			suspense = frappe.db.get_value(
+				"Account",
+				{"company": company, "account_name": ["like", "%Bank%"]},
+				"name",
+			)
+		if not suspense:
+			suspense = frappe.db.get_value("Account", {"company": company}, "name")
+
 		if frappe.db.exists("Paystack Gateway Setting", gateway):
 			existing = frappe.get_doc("Paystack Gateway Setting", gateway)
 			if not existing.enabled and enabled:
@@ -345,7 +355,7 @@ class GatewaySettingFactory:
 				"public_key": "pk_test_123",
 				"webhook_secret": webhook_secret,
 				"allowed_webhook_ips": allowed_ips,
-				"suspense_account": get_suspense_account(company),
+				"suspense_account": suspense,
 				"mode_of_payment": "Paystack",
 				"currency": "NGN",
 				"enabled": 1 if enabled else 0,
