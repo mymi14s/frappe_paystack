@@ -147,8 +147,6 @@ class PaystackPaymentLog(Document):
 				"Payment Entry creation failed. See Error Log for details.",
 				update_modified=True,
 			)
-		finally:
-			self.reload()
 
 	def get_payment_link(self) -> str:
 		"""Return the checkout URL for this log."""
