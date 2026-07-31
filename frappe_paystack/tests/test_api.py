@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
+from frappe.utils import random_string
 
 from frappe_paystack.api import (
 	company_from_reference,
@@ -40,7 +41,6 @@ class TestPaystackWebhookProcessing(FrappeTestCase):
 		A charge.success webhook must set status, amount,
 		references, and date.
 		"""
-		from frappe.utils import random_string
 
 		mock_vp.return_value = {"status": True, "data": {"status": "success"}}
 		tx_ref = f"ref_pay_{random_string(6)}"
