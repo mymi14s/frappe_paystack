@@ -142,7 +142,6 @@ class PaystackPaymentLog(Document):
 				"Failed to create Payment Entry from Paystack log",
 				f"{self.name} - {frappe.get_traceback()}",
 			)
-			self.db_set("status", "Failed", update_modified=True)
 			self.db_set(
 				"errors",
 				"Payment Entry creation failed. See Error Log for details.",
