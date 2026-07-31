@@ -40,16 +40,19 @@ class TestPaystackWebhookProcessing(FrappeTestCase):
 		A charge.success webhook must set status, amount,
 		references, and date.
 		"""
+		from frappe.utils import random_string
+
 		mock_vp.return_value = {"status": True, "data": {"status": "success"}}
+		tx_ref = f"ref_pay_{random_string(6)}"
 		log_name = PaymentLogFactory.create(
-			status="Pending", amount=1000, transaction_id="ref_pay_001"
+			status="Pending", amount=1000, transaction_id=tx_ref
 		)
 		self.addCleanup(PaymentLogFactory.cleanup, log_name)
 
 		webhook_data = {
 			"event": "charge.success",
 			"data": {
-				"reference": "ref_pay_001",
+				"reference": tx_ref,
 				"status": "success",
 				"amount": 50000,
 				"currency": "NGN",
@@ -64,11 +67,11 @@ class TestPaystackWebhookProcessing(FrappeTestCase):
 		self.assertIn(log.status, ("Processed", "Completed"))
 		self.assertEqual(log.amount_paid, 500.0)
 		self.assertEqual(log.currency_paid, "NGN")
-		self.assertEqual(log.payment_reference, "ref_pay_001")
-		self.assertEqual(log.transaction_id, "ref_pay_001")
-		self.assertEqual(log.idempotency_key, "ref_pay_001")
+		self.assertEqual(log.payment_reference, tx_ref)
+		self.assertEqual(log.transaction_id, tx_ref)
+		self.assertEqual(log.idempotency_key, tx_ref)
 		self.assertEqual(log.payment_date, "2024-06-15")
-		self.assertIn("ref_pay_001", log.raw_response)
+		self.assertIn(tx_ref, log.raw_response)
 
 	@patch(VALIDATE_PAYMENT_PATCH)
 	def test_process_webhook_failure_sets_failed_status(self, mock_vp):

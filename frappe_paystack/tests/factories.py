@@ -26,16 +26,26 @@ apply_all_patches()
 
 
 def get_suspense_account(company: str = TEST_COMPANY) -> str:
-	"""Return a valid bank account for the test company."""
+	"""
+	Return a valid account for the test company.
+
+	Tries Bank accounts first, then any non-group account.
+	"""
 	account = frappe.db.get_value(
 		"Account",
-		{"company": company, "account_type": "Bank"},
+		{"company": company, "account_type": "Bank", "is_group": 0},
 		"name",
 	)
 	if not account:
 		account = frappe.db.get_value(
 			"Account",
 			{"company": company, "is_group": 0},
+			"name",
+		)
+	if not account:
+		account = frappe.db.get_value(
+			"Account",
+			{"company": company},
 			"name",
 		)
 	return account
