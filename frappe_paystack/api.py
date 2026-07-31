@@ -51,13 +51,19 @@ def verify_paystack_signature(payload: bytes, signature: str, secret: str) -> bo
 	return hmac.compare_digest(expected, signature or "")
 
 
-@frappe.whitelist(allow_guest=True)
-def paystack_webhook() -> None:
-	"""Receive and process Paystack webhook events."""
+def get_webhook_request_data():
+	"""Extract webhook request data, signature, and IP from the current request."""
 	data = frappe.request.get_json() or {}
 	payload = frappe.request.data or b""
 	signature = frappe.get_request_header("x-paystack-signature")
 	request_ip = getattr(frappe.local, "request_ip", None)
+	return data, payload, signature, request_ip
+
+
+@frappe.whitelist(allow_guest=True)
+def paystack_webhook() -> None:
+	"""Receive and process Paystack webhook events."""
+	data, payload, signature, request_ip = get_webhook_request_data()
 
 	metadata = frappe._dict(dict(data.get("data")).get("metadata"))
 	ref = metadata.get("reference")
@@ -123,8 +129,6 @@ def process_refund_webhook_event(data: dict) -> None:
 			"transaction_reference"
 		)
 		refund_reference = tx.get("reference")
-		amount = (tx.get("amount") or 0) / 100
-		currency = (tx.get("currency") or "NGN").upper()
 
 		if not transaction_id:
 			return
@@ -143,24 +147,25 @@ def process_refund_webhook_event(data: dict) -> None:
 		if existing_status in ("Processed", "Completed"):
 			return
 
-		refund_log = frappe.get_doc("Paystack Refund Log", refund_log_name)
-		if event == "refund.processed":
-			refund_log.status = "Processed"
-		else:
-			refund_log.status = "Failed"
-
-		refund_log.refund_reference = refund_reference
-		refund_log.raw_response = json.dumps(tx)
-		refund_log.integration_request = log_integration_request(
+		new_status = "Processed" if event == "refund.processed" else "Failed"
+		ir_name = log_integration_request(
 			status="Completed",
 			url="webhook",
 			request_data=data,
-			response_data={"refund_reference": refund_reference, "status": refund_log.status},
+			response_data={"refund_reference": refund_reference, "status": new_status},
 			reference_doctype="Paystack Refund Log",
 			reference_docname=refund_log_name,
 		)
-		refund_log.save(ignore_permissions=True)
+
+		frappe.db.set_value("Paystack Refund Log", refund_log_name, "status", new_status)
+		frappe.db.set_value("Paystack Refund Log", refund_log_name, "refund_reference", refund_reference)
+		frappe.db.set_value("Paystack Refund Log", refund_log_name, "raw_response", json.dumps(tx))
+		frappe.db.set_value("Paystack Refund Log", refund_log_name, "integration_request", ir_name)
 		frappe.db.commit()
+
+		if new_status == "Processed":
+			refund_log = frappe.get_doc("Paystack Refund Log", refund_log_name)
+			refund_log.run_method("on_update")
 	except Exception as e:
 		frappe.log_error(str(e), "Paystack refund webhook")
 
@@ -183,25 +188,31 @@ def process_charge_webhook_event(data: dict) -> None:
 		if existing_status in ("Processed", "Completed"):
 			return
 
-		log = frappe.get_doc("Paystack Payment Log", name)
-		log.status = "Processed" if tx.get("status") == "success" else "Failed"
-		log.amount_paid = amount
-		log.currency_paid = currency
-		log.payment_reference = tx.get("reference")
-		log.transaction_id = tx.get("reference")
-		log.idempotency_key = tx.get("reference")
-		log.payment_date = tx.get("paid_at").split("T")[0]
-		log.raw_response = json.dumps(tx)
-		log.integration_request = log_integration_request(
+		new_status = "Processed" if tx.get("status") == "success" else "Failed"
+		ir_name = log_integration_request(
 			status="Completed",
 			url="webhook",
 			request_data=data,
-			response_data={"reference": ref, "status": log.status},
+			response_data={"reference": ref, "status": new_status},
 			reference_doctype=LOG_DOCTYPE,
 			reference_docname=name,
 		)
-		log.save(ignore_permissions=True)
+
+		frappe.db.set_value("Paystack Payment Log", name, "status", new_status)
+		frappe.db.set_value("Paystack Payment Log", name, "amount_paid", amount)
+		frappe.db.set_value("Paystack Payment Log", name, "currency_paid", currency)
+		frappe.db.set_value("Paystack Payment Log", name, "payment_reference", tx.get("reference"))
+		frappe.db.set_value("Paystack Payment Log", name, "transaction_id", tx.get("reference"))
+		frappe.db.set_value("Paystack Payment Log", name, "idempotency_key", tx.get("reference"))
+		frappe.db.set_value("Paystack Payment Log", name, "payment_date", tx.get("paid_at").split("T")[0])
+		frappe.db.set_value("Paystack Payment Log", name, "raw_response", json.dumps(tx))
+		frappe.db.set_value("Paystack Payment Log", name, "integration_request", ir_name)
 		frappe.db.commit()
+
+		if new_status == "Processed":
+			log = frappe.get_doc("Paystack Payment Log", name)
+			log.run_method("on_update")
+
 		if not frappe.db.get_value("Customer", metadata.get("customer"), "email_id"):
 			frappe.db.set_value(
 				"Customer", metadata.get("customer"), "email_id", metadata.get("email")

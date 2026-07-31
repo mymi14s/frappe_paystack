@@ -9,6 +9,7 @@ from frappe.tests.utils import FrappeTestCase
 from frappe_paystack.api import (
 	company_from_reference,
 	create_payment_link,
+	get_webhook_request_data,
 	paystack_webhook,
 	process_webhook_event,
 	validate_payment_link,
@@ -363,8 +364,10 @@ class TestPaystackWebhookSignatureFlow(FrappeTestCase):
 
 	@patch(VALIDATE_PAYMENT_PATCH)
 	def test_webhook_with_valid_signature_processes_event(self, mock_vp):
-		"""A webhook with a valid signature must process the event and update the log."""
-
+		"""
+		A webhook with a valid signature must process the event
+		and update the log.
+		"""
 		mock_vp.return_value = {"status": True, "data": {"status": "success"}}
 		log_name = PaymentLogFactory.create(status="Pending", amount=1000)
 		self.addCleanup(PaymentLogFactory.cleanup, log_name)
@@ -384,17 +387,9 @@ class TestPaystackWebhookSignatureFlow(FrappeTestCase):
 		payload = json.dumps(webhook_data).encode("utf-8")
 		signature = hmac_sha512(payload, secret)
 
-		mock_request = MagicMock()
-		mock_request.get_json.return_value = webhook_data
-		mock_request.data = payload
-
-		mock_local = MagicMock()
-		mock_local.request_ip = None
-
 		with patch("frappe_paystack.api.company_from_reference") as mock_ref, \
 			patch("frappe_paystack.api.resolve_paystack_settings") as mock_settings, \
-			patch("frappe_paystack.api.frappe.get_request_header") as mock_header, \
-			patch("frappe_paystack.api.frappe", wraps=frappe) as mock_frappe:
+			patch("frappe_paystack.api.get_webhook_request_data") as mock_req:
 
 			mock_ref.return_value = "_Test Company"
 			mock_settings.return_value = {
@@ -402,9 +397,7 @@ class TestPaystackWebhookSignatureFlow(FrappeTestCase):
 				"webhook_secret": secret,
 				"allowed_webhook_ips": None,
 			}
-			mock_header.return_value = signature
-			mock_frappe.request = mock_request
-			mock_frappe.local = mock_local
+			mock_req.return_value = (webhook_data, payload, signature, None)
 
 			paystack_webhook()
 
@@ -414,8 +407,10 @@ class TestPaystackWebhookSignatureFlow(FrappeTestCase):
 
 	@patch(VALIDATE_PAYMENT_PATCH)
 	def test_webhook_with_invalid_signature_throws(self, mock_vp):
-		"""A webhook with an invalid signature must throw PermissionError."""
-
+		"""
+		A webhook with an invalid signature must throw
+		PermissionError.
+		"""
 		mock_vp.return_value = {"status": True, "data": {"status": "success"}}
 		log_name = PaymentLogFactory.create(status="Pending", amount=1000)
 		self.addCleanup(PaymentLogFactory.cleanup, log_name)
@@ -433,17 +428,9 @@ class TestPaystackWebhookSignatureFlow(FrappeTestCase):
 		}
 		payload = json.dumps(webhook_data).encode("utf-8")
 
-		mock_request = MagicMock()
-		mock_request.get_json.return_value = webhook_data
-		mock_request.data = payload
-
-		mock_local = MagicMock()
-		mock_local.request_ip = None
-
 		with patch("frappe_paystack.api.company_from_reference") as mock_ref, \
 			patch("frappe_paystack.api.resolve_paystack_settings") as mock_settings, \
-			patch("frappe_paystack.api.frappe.get_request_header") as mock_header, \
-			patch("frappe_paystack.api.frappe", wraps=frappe) as mock_frappe:
+			patch("frappe_paystack.api.get_webhook_request_data") as mock_req:
 
 			mock_ref.return_value = "_Test Company"
 			mock_settings.return_value = {
@@ -451,9 +438,7 @@ class TestPaystackWebhookSignatureFlow(FrappeTestCase):
 				"webhook_secret": "real_secret",
 				"allowed_webhook_ips": None,
 			}
-			mock_header.return_value = "completely_wrong_signature"
-			mock_frappe.request = mock_request
-			mock_frappe.local = mock_local
+			mock_req.return_value = (webhook_data, payload, "wrong_sig", None)
 
 			with self.assertRaises(frappe.PermissionError):
 				paystack_webhook()
@@ -462,8 +447,10 @@ class TestPaystackWebhookSignatureFlow(FrappeTestCase):
 		self.assertEqual(log.status, "Pending")
 
 	def test_webhook_with_no_settings_throws(self):
-		"""A webhook with no Paystack settings must throw PermissionError."""
-
+		"""
+		A webhook with no Paystack settings must throw
+		PermissionError.
+		"""
 		webhook_data = {
 			"event": "charge.success",
 			"data": {
@@ -477,31 +464,23 @@ class TestPaystackWebhookSignatureFlow(FrappeTestCase):
 		}
 		payload = json.dumps(webhook_data).encode("utf-8")
 
-		mock_request = MagicMock()
-		mock_request.get_json.return_value = webhook_data
-		mock_request.data = payload
-
-		mock_local = MagicMock()
-		mock_local.request_ip = None
-
 		with patch("frappe_paystack.api.company_from_reference") as mock_ref, \
 			patch("frappe_paystack.api.resolve_paystack_settings") as mock_settings, \
-			patch("frappe_paystack.api.frappe.get_request_header") as mock_header, \
-			patch("frappe_paystack.api.frappe", wraps=frappe) as mock_frappe:
+			patch("frappe_paystack.api.get_webhook_request_data") as mock_req:
 
 			mock_ref.return_value = "_Test Company"
 			mock_settings.return_value = None
-			mock_header.return_value = "sig"
-			mock_frappe.request = mock_request
-			mock_frappe.local = mock_local
+			mock_req.return_value = (webhook_data, payload, "sig", None)
 
 			with self.assertRaises(frappe.PermissionError):
 				paystack_webhook()
 
 	@patch(VALIDATE_PAYMENT_PATCH)
 	def test_webhook_ip_not_in_allowlist_throws(self, mock_vp):
-		"""A webhook from a non-allowlisted IP must throw PermissionError."""
-
+		"""
+		A webhook from a non-allowlisted IP must throw
+		PermissionError.
+		"""
 		mock_vp.return_value = {"status": True, "data": {"status": "success"}}
 		log_name = PaymentLogFactory.create(status="Pending", amount=1000)
 		self.addCleanup(PaymentLogFactory.cleanup, log_name)
@@ -521,17 +500,9 @@ class TestPaystackWebhookSignatureFlow(FrappeTestCase):
 		payload = json.dumps(webhook_data).encode("utf-8")
 		signature = hmac_sha512(payload, secret)
 
-		mock_request = MagicMock()
-		mock_request.get_json.return_value = webhook_data
-		mock_request.data = payload
-
-		mock_local = MagicMock()
-		mock_local.request_ip = "1.1.1.1"
-
 		with patch("frappe_paystack.api.company_from_reference") as mock_ref, \
 			patch("frappe_paystack.api.resolve_paystack_settings") as mock_settings, \
-			patch("frappe_paystack.api.frappe.get_request_header") as mock_header, \
-			patch("frappe_paystack.api.frappe", wraps=frappe) as mock_frappe:
+			patch("frappe_paystack.api.get_webhook_request_data") as mock_req:
 
 			mock_ref.return_value = "_Test Company"
 			mock_settings.return_value = {
@@ -539,9 +510,7 @@ class TestPaystackWebhookSignatureFlow(FrappeTestCase):
 				"webhook_secret": secret,
 				"allowed_webhook_ips": "52.31.139.74",
 			}
-			mock_header.return_value = signature
-			mock_frappe.request = mock_request
-			mock_frappe.local = mock_local
+			mock_req.return_value = (webhook_data, payload, signature, "1.1.1.1")
 
 			with self.assertRaises(frappe.PermissionError):
 				paystack_webhook()
