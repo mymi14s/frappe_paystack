@@ -29,8 +29,8 @@ def get_suspense_account(company: str = TEST_COMPANY) -> str:
 	"""
 	Return a valid account for the test company.
 
-	Tries Bank accounts first, then any non-group account,
-	then falls back to known test account names.
+	Tries Bank accounts first, then Cash accounts, then any
+	non-group account. Creates a Bank account if none exists.
 	"""
 	account = frappe.db.get_value(
 		"Account",
@@ -40,25 +40,54 @@ def get_suspense_account(company: str = TEST_COMPANY) -> str:
 	if not account:
 		account = frappe.db.get_value(
 			"Account",
-			{"company": company, "is_group": 0},
+			{"company": company, "account_type": "Cash", "is_group": 0},
 			"name",
 		)
 	if not account:
 		account = frappe.db.get_value(
 			"Account",
-			{"company": company},
+			{"company": company, "is_group": 0},
 			"name",
 		)
 	if not account:
-		for name in [
-			"_Test Bank EUR - _TC",
-			"_Test Bank - _TC",
-			"_Test Cash - _TC",
-		]:
-			if frappe.db.exists("Account", name):
-				account = name
-				break
+		account = create_test_bank_account(company)
 	return account
+
+
+def create_test_bank_account(company: str = TEST_COMPANY) -> str:
+	"""
+	Create a Bank account for the test company if none exists.
+	"""
+	account_name = f"Test Paystack Bank - {company.split(' ')[0]}"
+	if frappe.db.exists("Account", account_name):
+		return account_name
+
+	root = frappe.db.get_value(
+		"Account",
+		{"company": company, "is_group": 1, "parent_account": None},
+		"name",
+	)
+	if not root:
+		root = frappe.db.get_value(
+			"Account",
+			{"company": company, "is_group": 1},
+			"name",
+		)
+
+	account = frappe.get_doc(
+		{
+			"doctype": "Account",
+			"account_name": "Test Paystack Bank",
+			"parent_account": root,
+			"company": company,
+			"account_type": "Bank",
+			"is_group": 0,
+		}
+	)
+	account.flags.ignore_permissions = True
+	account.flags.ignore_mandatory = True
+	account.insert()
+	return account.name
 
 
 def ensure_mode_of_payment() -> str:
