@@ -154,7 +154,6 @@ class TestPaystackGatewaySetting(FrappeTestCase):
 
 	def test_insert_with_webhook_secret_and_allowed_ips(self):
 		"""A gateway with webhook_secret and allowed_webhook_ips must save correctly."""
-		from frappe_paystack.tests.factories import ensure_mode_of_payment, get_suspense_account
 
 		ensure_mode_of_payment()
 		setting = frappe.get_doc(

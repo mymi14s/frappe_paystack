@@ -7,6 +7,7 @@ import frappe
 
 from frappe_paystack.utils import (
 	coalesce_currency,
+	initiate_refund,
 	is_ip_allowed,
 	is_paystack_enabled,
 	log_integration_request,
@@ -260,8 +261,6 @@ def initiate_refund_from_log(
 	Returns:
 		The name of the created Paystack Refund Log.
 	"""
-	from frappe_paystack.utils import initiate_refund as do_initiate_refund
-
 	payment_log = frappe.get_doc("Paystack Payment Log", payment_log_name)
 
 	if payment_log.status != "Completed":
@@ -288,7 +287,7 @@ def initiate_refund_from_log(
 	refund_log.insert()
 
 	try:
-		result = do_initiate_refund(
+		result = initiate_refund(
 			transaction_id=payment_log.transaction_id,
 			amount=amount,
 			currency=payment_log.currency or "NGN",

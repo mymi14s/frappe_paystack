@@ -1,9 +1,14 @@
+import requests
 from unittest.mock import MagicMock, patch
 
 import frappe
 from frappe.tests.utils import FrappeTestCase
 from frappe.utils import flt
 
+from frappe_paystack.api import (
+	initiate_refund_from_log,
+	process_refund_webhook_event,
+)
 from frappe_paystack.frappe_paystack.doctype.paystack_refund_log.paystack_refund_log import (
 	get_total_refunded,
 )
@@ -81,10 +86,9 @@ class TestPaystackRefundApi(FrappeTestCase):
 	@patch("frappe_paystack.utils.resolve_paystack_settings")
 	def test_initiate_refund_network_error_throws(self, mock_settings, mock_post):
 		"""initiate_refund throws when the API call raises a network error."""
-		import requests as req
 
 		mock_settings.return_value = {"secret_key": "sk_test_123"}
-		mock_post.side_effect = req.ConnectionError("Connection refused")
+		mock_post.side_effect = requests.ConnectionError("Connection refused")
 
 		with self.assertRaises(frappe.ValidationError):
 			initiate_refund(
@@ -335,7 +339,6 @@ class TestPaystackRefundWebhook(FrappeTestCase):
 
 	def test_process_refund_webhook_updates_log_to_processed(self):
 		"""A refund.processed webhook updates the Refund Log to Processed."""
-		from frappe_paystack.api import process_refund_webhook_event
 
 		log_name = PaymentLogFactory.create_completed(amount=500, amount_paid=500)
 		self.addCleanup(PaymentLogFactory.cleanup, log_name)
@@ -367,7 +370,6 @@ class TestPaystackRefundWebhook(FrappeTestCase):
 
 	def test_process_refund_webhook_marks_failed(self):
 		"""A refund.failed webhook sets the Refund Log status to Failed."""
-		from frappe_paystack.api import process_refund_webhook_event
 
 		log_name = PaymentLogFactory.create_completed(amount=500, amount_paid=500)
 		self.addCleanup(PaymentLogFactory.cleanup, log_name)
@@ -399,7 +401,6 @@ class TestPaystackRefundWebhook(FrappeTestCase):
 
 	def test_process_refund_webhook_skips_already_processed(self):
 		"""A refund webhook for an already-Processed log must not reprocess."""
-		from frappe_paystack.api import process_refund_webhook_event
 
 		log_name = PaymentLogFactory.create_completed(amount=500, amount_paid=500)
 		self.addCleanup(PaymentLogFactory.cleanup, log_name)
@@ -431,7 +432,6 @@ class TestPaystackRefundWebhook(FrappeTestCase):
 
 	def test_process_refund_webhook_nonexistent_log_does_not_raise(self):
 		"""A refund webhook for a nonexistent Refund Log must not raise."""
-		from frappe_paystack.api import process_refund_webhook_event
 
 		webhook_data = {
 			"event": "refund.processed",
@@ -456,7 +456,6 @@ class TestPaystackManualRefund(FrappeTestCase):
 	@patch("frappe_paystack.utils.resolve_paystack_settings")
 	def test_initiate_refund_from_log_creates_refund_log(self, mock_settings, mock_post):
 		"""initiate_refund_from_log creates a Refund Log and calls the Paystack API."""
-		from frappe_paystack.api import initiate_refund_from_log
 
 		mock_settings.return_value = {"secret_key": "sk_test_123"}
 
@@ -490,7 +489,6 @@ class TestPaystackManualRefund(FrappeTestCase):
 
 	def test_initiate_refund_from_log_throws_for_non_completed_payment(self):
 		"""initiate_refund_from_log must throw when the Payment Log is not Completed."""
-		from frappe_paystack.api import initiate_refund_from_log
 
 		log_name = PaymentLogFactory.create(status="Pending", amount=100)
 		self.addCleanup(PaymentLogFactory.cleanup, log_name)

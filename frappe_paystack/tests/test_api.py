@@ -9,6 +9,7 @@ from frappe.tests.utils import FrappeTestCase
 from frappe_paystack.api import (
 	company_from_reference,
 	create_payment_link,
+	paystack_webhook,
 	process_webhook_event,
 	validate_payment_link,
 )
@@ -363,7 +364,6 @@ class TestPaystackWebhookSignatureFlow(FrappeTestCase):
 	@patch(VALIDATE_PAYMENT_PATCH)
 	def test_webhook_with_valid_signature_processes_event(self, mock_vp):
 		"""A webhook with a valid signature must process the event and update the log."""
-		from frappe_paystack.api import paystack_webhook
 
 		mock_vp.return_value = {"status": True, "data": {"status": "success"}}
 		log_name = PaymentLogFactory.create(status="Pending", amount=1000)
@@ -410,7 +410,6 @@ class TestPaystackWebhookSignatureFlow(FrappeTestCase):
 	@patch(VALIDATE_PAYMENT_PATCH)
 	def test_webhook_with_invalid_signature_throws(self, mock_vp):
 		"""A webhook with an invalid signature must throw PermissionError."""
-		from frappe_paystack.api import paystack_webhook
 
 		mock_vp.return_value = {"status": True, "data": {"status": "success"}}
 		log_name = PaymentLogFactory.create(status="Pending", amount=1000)
@@ -454,7 +453,6 @@ class TestPaystackWebhookSignatureFlow(FrappeTestCase):
 
 	def test_webhook_with_no_settings_throws(self):
 		"""A webhook with no Paystack settings must throw PermissionError."""
-		from frappe_paystack.api import paystack_webhook
 
 		webhook_data = {
 			"event": "charge.success",
@@ -488,7 +486,6 @@ class TestPaystackWebhookSignatureFlow(FrappeTestCase):
 	@patch(VALIDATE_PAYMENT_PATCH)
 	def test_webhook_ip_not_in_allowlist_throws(self, mock_vp):
 		"""A webhook from a non-allowlisted IP must throw PermissionError."""
-		from frappe_paystack.api import paystack_webhook
 
 		mock_vp.return_value = {"status": True, "data": {"status": "success"}}
 		log_name = PaymentLogFactory.create(status="Pending", amount=1000)

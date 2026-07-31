@@ -539,6 +539,7 @@ class RefundLogFactory:
 		)
 		refund_log.flags.ignore_permissions = True
 		refund_log.flags.ignore_validate = True
+		refund_log.flags.ignore_on_update = True
 		refund_log.insert()
 		return refund_log.name
 

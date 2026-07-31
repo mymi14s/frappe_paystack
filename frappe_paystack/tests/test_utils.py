@@ -317,7 +317,6 @@ class TestPaystackValidatePayment(FrappeTestCase):
 		self, mock_settings, mock_enabled, mock_get
 	):
 		"""validate_payment returns API data and logs a Completed Integration Request."""
-		from frappe_paystack.utils import validate_payment
 
 		mock_enabled.return_value = True
 		mock_settings.return_value = {"secret_key": "sk_test_123"}
@@ -348,7 +347,6 @@ class TestPaystackValidatePayment(FrappeTestCase):
 		self, mock_settings, mock_enabled, mock_get
 	):
 		"""validate_payment throws when the API call raises an exception."""
-		from frappe_paystack.utils import validate_payment
 
 		mock_enabled.return_value = True
 		mock_settings.return_value = {"secret_key": "sk_test_123"}
@@ -365,7 +363,6 @@ class TestPaystackValidatePayment(FrappeTestCase):
 	@patch("frappe_paystack.utils.is_paystack_enabled")
 	def test_validate_payment_throws_when_not_enabled(self, mock_enabled):
 		"""validate_payment throws when Paystack is not enabled for the company."""
-		from frappe_paystack.utils import validate_payment
 
 		mock_enabled.return_value = False
 

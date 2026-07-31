@@ -127,8 +127,6 @@ class PaystackRefundLog(Document):
 				"reversal_payment_entry", pe.name, update_modified=False
 			)
 			self.db_set("status", "Completed", update_modified=True)
-			self.reload()
-			self.submit()
 			self.update_payment_log_total_refunded()
 			self.send_refund_receipt_email()
 		except Exception:
@@ -142,8 +140,6 @@ class PaystackRefundLog(Document):
 				"Reversal Payment Entry creation failed. See Error Log for details.",
 				update_modified=True,
 			)
-		finally:
-			self.reload()
 
 	def on_trash(self) -> None:
 		"""Prevent deletion of processed refund logs or logs with a reversal PE."""

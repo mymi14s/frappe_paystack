@@ -135,8 +135,6 @@ class PaystackPaymentLog(Document):
 			pe.submit()
 			self.db_set("payment_entry", pe.name, update_modified=False)
 			self.db_set("status", "Completed", update_modified=True)
-			self.reload()
-			self.submit()
 		except Exception:
 			frappe.log_error(
 				"Failed to create Payment Entry from Paystack log",
