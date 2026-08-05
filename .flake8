@@ -1,13 +1,16 @@
 [flake8]
 max-line-length = 110
+
+# W503/E203 flag wrapping that black produces.
 extend-ignore = W503, E203
+
 exclude =
     .git,
     __pycache__,
+    node_modules,
     build,
     dist,
     *.egg-info,
-    frappe_paystack/public/js/vue.global.js,
-    frappe_paystack/public/js/sweetalert2@11.js
-per-file-ignores =
-    frappe_paystack/frappe_paystack/report/paystack_transactions/paystack_transactions.py:E501
+    cypress,
+    js-tests,
+    frappe_paystack/public/js/vue.global.js

@@ -1,0 +1,25 @@
+{
+	"company": "_Test Company 1",
+	"currency": "USD",
+	"item": "_Test Paystack Shop Item",
+	"rate": 250,
+	"customer": "_Test Paystack Shop Buyer",
+	"buyer_user": "test.paystack.buyer@example.com",
+	"rival": "_Test Paystack Shop Rival",
+	"rival_user": "test.paystack.rival@example.com",
+	"rival_reference": "psref-rival-shop",
+	"rival_amount": 90,
+	"capture": {
+		"amount": 400,
+		"fee": 6
+	},
+	"second_capture": {
+		"amount": 120,
+		"fee": 1.8
+	},
+	"settlement": {
+		"settled_id": "990001",
+		"refused_id": "990002",
+		"deductions": 25
+	}
+}

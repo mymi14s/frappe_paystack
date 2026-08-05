@@ -1,0 +1,18 @@
+{
+ "actions": [],
+ "creation": "2026-08-02 00:00:00.000000",
+ "doctype": "Print Format",
+ "document_type": "Paystack Payment Log",
+ "html": "<div class=\"container\">\n    <h2 style=\"text-align: center;\">Payment Receipt</h2>\n    <hr>\n    <table class=\"table table-bordered\">\n        <tbody>\n            <tr>\n                <td><strong>Receipt For</strong></td>\n                <td>{{ doc.linked_doctype }} {{ doc.linked_docname }}</td>\n            </tr>\n            <tr>\n                <td><strong>Paystack Reference</strong></td>\n                <td>{{ doc.payment_reference or doc.name }}</td>\n            </tr>\n            <tr>\n                <td><strong>Amount Paid</strong></td>\n                <td>{{ frappe.utils.fmt_money(doc.amount_paid or doc.amount, currency=doc.currency_paid or doc.currency) }}</td>\n            </tr>\n            {% if doc.total_refunded %}\n            <tr>\n                <td><strong>Refunded</strong></td>\n                <td>{{ frappe.utils.fmt_money(doc.total_refunded, currency=doc.currency_paid or doc.currency) }}</td>\n            </tr>\n            {% endif %}\n            <tr>\n                <td><strong>Status</strong></td>\n                <td>{{ doc.status }}</td>\n            </tr>\n            <tr>\n                <td><strong>Payment Date</strong></td>\n                <td>{{ frappe.utils.formatdate(doc.payment_date or doc.modified) }}</td>\n            </tr>\n            <tr>\n                <td><strong>Company</strong></td>\n                <td>{{ doc.company }}</td>\n            </tr>\n        </tbody>\n    </table>\n    <p style=\"text-align: center; margin-top: 20px;\">Thank you for your payment.</p>\n</div>\n",
+ "line_breaks": 0,
+ "modified": "2026-08-02 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Frappe Paystack",
+ "name": "Paystack Payment Receipt",
+ "owner": "Administrator",
+ "print_format_builder": 0,
+ "print_format_type": "Jinja",
+ "raw_printing": 0,
+ "row_format": "Dynamic",
+ "standard": "Yes"
+}

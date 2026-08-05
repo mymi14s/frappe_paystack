@@ -1,0 +1,198 @@
+{
+ "actions": [],
+ "allow_rename": 0,
+ "autoname": "hash",
+ "creation": "2026-08-02 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 0,
+ "engine": "InnoDB",
+ "field_order": [
+  "customer",
+  "company",
+  "card_label",
+  "active",
+  "column_break_auth",
+  "customer_code",
+  "email",
+  "reusable",
+  "section_break_card",
+  "channel",
+  "card_type",
+  "brand",
+  "bank",
+  "column_break_card",
+  "last4",
+  "exp_month",
+  "exp_year",
+  "section_break_token",
+  "signature",
+  "authorization_code"
+ ],
+ "fields": [
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Customer",
+   "options": "Customer",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "read_only": 1
+  },
+  {
+   "fieldname": "card_label",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Card",
+   "read_only": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "active",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Active"
+  },
+  {
+   "fieldname": "column_break_auth",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "customer_code",
+   "fieldtype": "Data",
+   "label": "Paystack Customer Code",
+   "read_only": 1
+  },
+  {
+   "fieldname": "email",
+   "fieldtype": "Data",
+   "label": "Email",
+   "options": "Email",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "reusable",
+   "fieldtype": "Check",
+   "label": "Reusable",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_card",
+   "fieldtype": "Section Break",
+   "label": "Instrument"
+  },
+  {
+   "fieldname": "channel",
+   "fieldtype": "Data",
+   "label": "Channel",
+   "read_only": 1
+  },
+  {
+   "fieldname": "card_type",
+   "fieldtype": "Data",
+   "label": "Card Type",
+   "read_only": 1
+  },
+  {
+   "fieldname": "brand",
+   "fieldtype": "Data",
+   "label": "Brand",
+   "read_only": 1
+  },
+  {
+   "fieldname": "bank",
+   "fieldtype": "Data",
+   "label": "Bank",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_card",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "The last four digits Paystack returns. No other part of the card number is ever stored.",
+   "fieldname": "last4",
+   "fieldtype": "Data",
+   "label": "Last 4 Digits",
+   "read_only": 1
+  },
+  {
+   "fieldname": "exp_month",
+   "fieldtype": "Data",
+   "label": "Expiry Month",
+   "read_only": 1
+  },
+  {
+   "fieldname": "exp_year",
+   "fieldtype": "Data",
+   "label": "Expiry Year",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_token",
+   "fieldtype": "Section Break",
+   "label": "Token"
+  },
+  {
+   "description": "Paystack's own fingerprint for the instrument. Two authorizations carrying the same signature are the same card.",
+   "fieldname": "signature",
+   "fieldtype": "Data",
+   "label": "Signature",
+   "read_only": 1
+  },
+  {
+   "description": "Charges this instrument on its own, so it is stored encrypted and never leaves the server.",
+   "fieldname": "authorization_code",
+   "fieldtype": "Password",
+   "label": "Authorization Code",
+   "read_only": 1
+  }
+ ],
+ "in_create": 1,
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-08-02 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Frappe Paystack",
+ "name": "Paystack Customer Authorization",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "delete": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accounts Manager",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "Accounts User"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "card_label",
+ "track_changes": 1
+}

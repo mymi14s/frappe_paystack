@@ -1,6 +1,16 @@
 [pre_model_sync]
-# Patches added in this section will be executed before doctypes are migrated
-# Read docs to understand patches: https://frappeframework.com/docs/v14/user/en/database-migrations
+frappe_paystack.patches.v15_0.rename_patch_log
+frappe_paystack.patches.v15_0.rename_scheduled_jobs
+frappe_paystack.patches.v15_0.drop_weekly_reconciliation_report
 
 [post_model_sync]
-# Patches added in this section will be executed after doctypes are migrated
+frappe_paystack.patches.v15_0.create_payment_gateway
+frappe_paystack.patches.v15_0.drop_payment_log_raw_response
+frappe_paystack.patches.v15_0.set_refunded_status
+frappe_paystack.patches.v15_0.drop_refund_log_submittable
+frappe_paystack.patches.v15_0.backfill_payment_request
+frappe_paystack.patches.v15_0.create_dashboard_widgets
+frappe_paystack.patches.v15_0.seed_payment_log_retries
+frappe_paystack.patches.v15_0.abandon_expired_settlements
+frappe_paystack.patches.v15_0.route_payments_per_company
+frappe_paystack.patches.v15_0.rename_manual_override

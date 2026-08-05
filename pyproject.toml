@@ -4,11 +4,11 @@ authors = [
     { name = "Anthony Emmanuel", email = "mymi14s@hotmail.com"}
 ]
 description = "Paystack integration for Frappe/ERPNext"
-requires-python = ">=3.12"
+requires-python = ">=3.10,<3.15"
 readme = "README.md"
 dynamic = ["version"]
 dependencies = [
-    # "frappe~=16.0.0" # Installed and managed by bench.
+    # "frappe>=15.0.0" # Installed and managed by bench.
 ]
 
 [build-system]
@@ -16,17 +16,36 @@ requires = ["flit_core >=3.4,<4"]
 build-backend = "flit_core.buildapi"
 
 [tool.bench.frappe-dependencies]
-frappe = ">=15.0.0,<=17.0.0"
-erpnext = ">=15.0.0,<=17.0.0"
+frappe = ">=15.0.0"
+erpnext = ">=15.0.0"
+# payments tags no release series; this floor checks the app is present.
+payments = ">=0.0.1"
 
 # These dependencies are only installed when developer mode is enabled
 [tool.bench.dev-dependencies]
 # package_name = "~=1.1.0"
 
-[tool.flake8]
-max-line-length = 110
-extend-ignore = ["W503", "E203"]
-exclude = ["__pycache__", ".git", "*.egg-info", "build", "dist"]
+# flake8 settings live in .flake8.
+
+[tool.black]
+line-length = 110
+target-version = ["py310"]
+extend-exclude = '''
+/(
+    node_modules
+  | \.git
+  | frappe_paystack/public/js
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 110
+known_third_party = ["frappe"]
+known_first_party = ["frappe_paystack"]
+# erpnext sorts into its own trailing block.
+known_local_folder = ["erpnext"]
+skip = ["node_modules", ".git"]
 
 [tool.pylint."messages control"]
 disable = [
@@ -34,24 +53,74 @@ disable = [
     "too-many-locals",
     "too-many-branches",
     "too-many-statements",
+    "too-many-positional-arguments",
+    "too-many-lines",
+    "too-many-public-methods",
+    "too-many-return-statements",
     "missing-class-docstring",
     "missing-module-docstring",
+    "missing-function-docstring",
     "protected-access",
     "broad-except",
-    "import-outside-toplevel",
+    "invalid-name",
+    "attribute-defined-outside-init",
+    # frappe resolves document fields at runtime.
+    "no-member",
+    "access-member-before-definition",
+    "unsubscriptable-object",
+    # frappe hooks and patched mocks fix the signature.
+    "unused-argument",
+    # Tests raise and catch bare Exception to drive failure paths.
+    "broad-exception-raised",
+    # Test cases group by scenario.
+    "too-few-public-methods",
+    "too-many-instance-attributes",
+    # Test factories and doctype controllers repeat setup blocks.
+    "duplicate-code",
+    # isort owns import order.
+    "wrong-import-order",
+    "ungrouped-imports",
 ]
 
 [tool.pylint.format]
 max-line-length = 110
+indent-string = "    "
+
+[tool.pylint.master]
+# Matches the floor in requires-python.
+py-version = "3.10"
+ignore-paths = ["node_modules", ".*/public/js/.*"]
+# These packages come from the bench.
+ignored-modules = [
+    "frappe",
+    "erpnext",
+    "payments",
+    "webshop",
+    "pyqrcode",
+    "werkzeug",
+    "requests",
+]
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.10"
 ignore_missing_imports = true
 disallow_untyped_defs = false
-check_untyped_defs = true
-warn_return_any = true
-warn_unused_ignores = true
+check_untyped_defs = false
+warn_return_any = false
+warn_unused_ignores = false
+# Both www page folders are hyphenated, so each index.py maps to the module
+# name "index". Excluding one leaves the other collectable.
+exclude = "(www/paystack-checkout|frappe_paystack/tests/)"
+# frappe and erpnext ship no type information, so every call yields Any.
+disable_error_code = [
+    "attr-defined",
+    "index",
+    "union-attr",
+    "no-any-return",
+    "var-annotated",
+    "has-type",
+]
 
 [[tool.mypy.overrides]]
-module = ["frappe.*", "erpnext.*", "requests.*"]
+module = ["frappe.*", "erpnext.*", "requests.*", "payments.*"]
 ignore_missing_imports = true

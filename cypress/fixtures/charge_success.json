@@ -1,0 +1,68 @@
+{
+	"event": "charge.success",
+	"data": {
+		"id": 900100200,
+		"domain": "test",
+		"status": "success",
+		"reference": "",
+		"amount": 0,
+		"message": null,
+		"gateway_response": "Successful",
+		"paid_at": "",
+		"created_at": "",
+		"channel": "card",
+		"currency": "",
+		"ip_address": "102.89.0.1",
+		"metadata": {
+			"reference": "",
+			"reference_doctype": "",
+			"reference_docname": "",
+			"customer": "",
+			"email": ""
+		},
+		"fees_breakdown": null,
+		"log": null,
+		"fees": 375,
+		"fees_split": null,
+		"authorization": {
+			"authorization_code": "AUTH_paystackshopui",
+			"bin": "408408",
+			"last4": "4081",
+			"exp_month": "12",
+			"exp_year": "2030",
+			"channel": "card",
+			"card_type": "visa DEBIT",
+			"bank": "Test Bank",
+			"country_code": "NG",
+			"brand": "visa",
+			"reusable": true,
+			"signature": "SIG_paystackshopui",
+			"account_name": null
+		},
+		"customer": {
+			"id": 900100,
+			"first_name": "Paystack Shop",
+			"last_name": "Buyer",
+			"email": "",
+			"customer_code": "CUS_paystackshopui",
+			"phone": null,
+			"metadata": null,
+			"risk_action": "default",
+			"international_format_phone": null
+		},
+		"plan": {},
+		"subaccount": {},
+		"split": {},
+		"order_id": null,
+		"paidAt": "",
+		"createdAt": "",
+		"requested_amount": 0,
+		"pos_transaction_data": null,
+		"source": {
+			"type": "api",
+			"source": "merchant_api",
+			"entry_point": "transaction_initialize",
+			"identifier": null
+		}
+	}
+}

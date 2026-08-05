@@ -1,6 +1,15 @@
 {
- "charts": [],
- "content": "[{\"id\":\"5rx2lYfcEM\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Paystack Dashboard</span>\",\"col\":12}},{\"id\":\"nr4W0kuuZU\",\"type\":\"card\",\"data\":{\"card_name\":\"Doctypes\",\"col\":4}},{\"id\":\"ye4fJv_V4O\",\"type\":\"card\",\"data\":{\"card_name\":\"Reports\",\"col\":4}}]",
+ "charts": [
+  {
+   "chart_name": "Paystack Payments Captured",
+   "label": "Paystack Payments Captured"
+  },
+  {
+   "chart_name": "Paystack Payments by Status",
+   "label": "Paystack Payments by Status"
+  }
+ ],
+ "content": "[{\"id\": \"5rx2lYfcEM\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\">Paystack Dashboard</span>\", \"col\": 12}}, {\"id\": \"psNumCardHdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\">Needs Attention</span>\", \"col\": 12}}, {\"id\": \"psCard0\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Paystack Awaiting Settlement\", \"col\": 3}}, {\"id\": \"psCard1\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Paystack Failed Payments\", \"col\": 3}}, {\"id\": \"psCard2\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Paystack Reconciliation Mismatches\", \"col\": 3}}, {\"id\": \"psCard3\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Paystack Refunds Pending\", \"col\": 3}}, {\"id\": \"psFailHdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\">Failures</span>\", \"col\": 12}}, {\"id\": \"psCard4\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Paystack Failed API Calls\", \"col\": 3}}, {\"id\": \"psCard5\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Paystack Errors Unreviewed\", \"col\": 3}}, {\"id\": \"psCard6\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Paystack Payouts Not Booked\", \"col\": 3}}, {\"id\": \"psCard7\", \"type\": \"number_card\", \"data\": {\"number_card_name\": \"Paystack Needs Attention\", \"col\": 3}}, {\"id\": \"psChartHdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\">Payments</span>\", \"col\": 12}}, {\"id\": \"psChart0\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Paystack Payments Captured\", \"col\": 6}}, {\"id\": \"psChart1\", \"type\": \"chart\", \"data\": {\"chart_name\": \"Paystack Payments by Status\", \"col\": 6}}, {\"id\": \"psLinkHdr\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\">Records &amp; Reports</span>\", \"col\": 12}}, {\"id\": \"nr4W0kuuZU\", \"type\": \"card\", \"data\": {\"card_name\": \"Doctypes\", \"col\": 4}}, {\"id\": \"ye4fJv_V4O\", \"type\": \"card\", \"data\": {\"card_name\": \"Reports\", \"col\": 4}}, {\"id\": \"l2dzRMM-lQ\", \"type\": \"card\", \"data\": {\"card_name\": \"Pages\", \"col\": 4}}]",
  "creation": "2025-09-27 16:45:24.172605",
  "custom_blocks": [],
  "docstatus": 0,
@@ -17,10 +26,20 @@
    "hidden": 0,
    "is_query_report": 0,
    "label": "Reports",
-   "link_count": 2,
+   "link_count": 5,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Paystack Activity",
+   "link_count": 0,
+   "link_to": "Paystack Activity",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
   },
   {
    "hidden": 0,
@@ -44,12 +63,42 @@
   },
   {
    "hidden": 0,
+   "is_query_report": 1,
+   "label": "Paystack Unsettled Payments",
+   "link_count": 0,
+   "link_to": "Paystack Unsettled Payments",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 1,
+   "label": "Paystack Settlements vs Ledger",
+   "link_count": 0,
+   "link_to": "Paystack Settlements vs Ledger",
+   "link_type": "Report",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
    "is_query_report": 0,
    "label": "Doctypes",
-   "link_count": 2,
+   "link_count": 5,
    "link_type": "DocType",
    "onboard": 0,
    "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Paystack Gateway Setting",
+   "link_count": 0,
+   "link_to": "Paystack Gateway Setting",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   },
   {
    "hidden": 0,
@@ -64,19 +113,91 @@
   {
    "hidden": 0,
    "is_query_report": 0,
-   "label": "Paystack Gateway Setting",
+   "label": "Paystack Refund Log",
    "link_count": 0,
-   "link_to": "Paystack Gateway Setting",
+   "link_to": "Paystack Refund Log",
    "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Paystack Reconciliation Log",
+   "link_count": 0,
+   "link_to": "Paystack Reconciliation Log",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Paystack Settlement",
+   "link_count": 0,
+   "link_to": "Paystack Settlement",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Pages",
+   "link_count": 1,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "paystack-reconciliation",
+   "link_count": 0,
+   "link_to": "paystack-reconciliation",
+   "link_type": "Page",
    "onboard": 0,
    "type": "Link"
   }
  ],
- "modified": "2025-09-27 16:47:42.754014",
- "modified_by": "Administrator",
+ "modified": "2026-08-02 16:00:00.000000",
+ "modified_by": "h@mail.com",
  "module": "Frappe Paystack",
  "name": "Paystack Dashboard",
- "number_cards": [],
+ "number_cards": [
+  {
+   "label": "Paystack Awaiting Settlement",
+   "number_card_name": "Paystack Awaiting Settlement"
+  },
+  {
+   "label": "Paystack Failed Payments",
+   "number_card_name": "Paystack Failed Payments"
+  },
+  {
+   "label": "Paystack Reconciliation Mismatches",
+   "number_card_name": "Paystack Reconciliation Mismatches"
+  },
+  {
+   "label": "Paystack Refunds Pending",
+   "number_card_name": "Paystack Refunds Pending"
+  },
+  {
+   "label": "Paystack Failed API Calls",
+   "number_card_name": "Paystack Failed API Calls"
+  },
+  {
+   "label": "Paystack Errors Unreviewed",
+   "number_card_name": "Paystack Errors Unreviewed"
+  },
+  {
+   "label": "Paystack Payouts Not Booked",
+   "number_card_name": "Paystack Payouts Not Booked"
+  },
+  {
+   "label": "Paystack Needs Attention",
+   "number_card_name": "Paystack Needs Attention"
+  }
+ ],
  "owner": "Administrator",
  "parent_page": "",
  "public": 1,

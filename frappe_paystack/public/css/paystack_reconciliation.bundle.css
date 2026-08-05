@@ -1,0 +1,47 @@
+.paystack-reconciliation .ps-stats {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+	gap: 15px;
+	margin-bottom: 25px;
+}
+
+.paystack-reconciliation .ps-card {
+	background: var(--card-bg, #fff);
+	border: 1px solid var(--border-color, #d1d8dd);
+	border-radius: var(--border-radius-md, 6px);
+	padding: 15px;
+	text-align: center;
+}
+
+.paystack-reconciliation .ps-value {
+	font-size: 26px;
+	font-weight: 600;
+	color: var(--text-color, #1f272e);
+}
+
+.paystack-reconciliation .ps-value.ps-green {
+	color: var(--green-600, #28a745);
+}
+
+.paystack-reconciliation .ps-value.ps-red {
+	color: var(--red-600, #dc3545);
+}
+
+.paystack-reconciliation .ps-value.ps-blue {
+	color: var(--blue-600, #007bff);
+}
+
+.paystack-reconciliation .ps-label {
+	font-size: 12px;
+	color: var(--text-muted, #8d99a6);
+	margin-top: 4px;
+}
+
+.paystack-reconciliation .ps-table-wrap {
+	overflow-x: auto;
+}
+
+.paystack-reconciliation table {
+	font-size: 13px;
+	min-width: 900px;
+}

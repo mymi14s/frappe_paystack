@@ -18,7 +18,7 @@ frappe.ui.form.on("Paystack Refund Log", {
 		}[s] || "gray";
 		frm.dashboard.clear_headline();
 		frm.dashboard.set_headline_alert(
-			__( `Status: <strong style="text-transform:uppercase">${s}</strong>`),
+			__('Status: <strong style="text-transform:uppercase">{0}</strong>', [s]),
 			color
 		);
 	},

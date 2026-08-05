@@ -13,21 +13,25 @@
   "status",
   "retry_count",
   "last_retry",
+  "expires_at",
+  "authorization_url",
   "amount_paid",
   "currency_paid",
   "column_break_rbnp",
   "payment_reference",
   "transaction_id",
   "idempotency_key",
+  "webhook_event_id",
   "payment_date",
   "payment_entry",
   "total_refunded",
+  "paystack_fee",
+  "settlement",
+  "payment_request",
+  "customer_authorization",
   "integration_request",
-  "section_break_vqwk",
-  "raw_response",
   "tab_break_v5qn",
-  "errors",
-  "amended_from"
+  "errors"
  ],
  "fields": [
   {
@@ -36,50 +40,54 @@
    "in_list_view": 1,
    "label": "Company",
    "options": "Company",
+   "read_only": 1,
    "reqd": 1
   },
   {
    "fieldname": "linked_doctype",
    "fieldtype": "Data",
-   "label": "Linked Doctype"
+   "label": "Linked Doctype",
+   "read_only": 1
   },
   {
    "fieldname": "linked_docname",
    "fieldtype": "Data",
-   "label": "Linked Docname"
+   "label": "Linked Docname",
+   "read_only": 1
   },
   {
    "fieldname": "amount",
    "fieldtype": "Currency",
-   "label": "Amount"
+   "label": "Amount",
+   "read_only": 1
   },
   {
    "fieldname": "currency",
    "fieldtype": "Data",
-   "label": "Currency"
+   "label": "Currency",
+   "read_only": 1
   },
   {
    "default": "Pending",
    "fieldname": "status",
    "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Status",
-   "options": "Pending\nProcessed\nCompleted\nFailed"
+   "options": "Pending\nProcessed\nNeeds Attention\nCompleted\nPartially Refunded\nRefunded\nFailed",
+   "read_only": 1
   },
   {
    "fieldname": "retry_count",
    "fieldtype": "Int",
-   "label": "Retry Count"
+   "label": "Retry Count",
+   "read_only": 1
   },
   {
    "fieldname": "last_retry",
    "fieldtype": "Datetime",
-   "label": "Last Retry"
-  },
-  {
-   "fieldname": "raw_response",
-   "fieldtype": "Text",
-   "label": "Raw Response",
-   "options": "JSON"
+   "label": "Last Retry",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_jvkw",
@@ -97,10 +105,6 @@
    "label": "Currency Paid",
    "options": "Currency",
    "read_only": 1
-  },
-  {
-   "fieldname": "section_break_vqwk",
-   "fieldtype": "Section Break"
   },
   {
    "fieldname": "column_break_rbnp",
@@ -128,8 +132,34 @@
    "fieldname": "total_refunded",
    "fieldtype": "Currency",
    "label": "Total Refunded",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "description": "What Paystack charged to process this capture, as it reported it. Booked to the fee account when the payout that carried it is settled.",
+   "fieldname": "paystack_fee",
+   "fieldtype": "Currency",
+   "label": "Paystack Fee",
+   "no_copy": 1,
+   "options": "currency_paid",
+   "read_only": 1
+  },
+  {
+   "fieldname": "settlement",
+   "fieldtype": "Link",
+   "label": "Settlement",
+   "no_copy": 1,
+   "options": "Paystack Settlement",
    "read_only": 1,
-   "no_copy": 1
+   "search_index": 1
+  },
+  {
+   "fieldname": "payment_request",
+   "fieldtype": "Link",
+   "label": "Payment Request",
+   "no_copy": 1,
+   "options": "Payment Request",
+   "read_only": 1
   },
   {
    "fieldname": "tab_break_v5qn",
@@ -139,17 +169,8 @@
   {
    "fieldname": "errors",
    "fieldtype": "Small Text",
-   "label": "Errors"
-  },
-  {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "Paystack Payment Log",
-   "print_hide": 1,
-   "read_only": 1,
-   "search_index": 1
+   "label": "Errors",
+   "read_only": 1
   },
   {
    "fieldname": "transaction_id",
@@ -161,24 +182,51 @@
   {
    "fieldname": "idempotency_key",
    "fieldtype": "Data",
-   "label": "Idempotency Key",
-   "read_only": 1,
    "hidden": 1,
-   "no_copy": 1
+   "label": "Idempotency Key",
+   "no_copy": 1,
+   "read_only": 1
   },
   {
    "fieldname": "integration_request",
    "fieldtype": "Link",
    "label": "Integration Request",
+   "no_copy": 1,
    "options": "Integration Request",
+   "read_only": 1
+  },
+  {
+   "fieldname": "webhook_event_id",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Webhook Event ID",
+   "no_copy": 1,
    "read_only": 1,
-   "no_copy": 1
+   "unique": 1
+  },
+  {
+   "fieldname": "expires_at",
+   "fieldtype": "Datetime",
+   "label": "Expires At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "authorization_url",
+   "fieldtype": "Small Text",
+   "label": "Authorization URL",
+   "read_only": 1
+  },
+  {
+   "fieldname": "customer_authorization",
+   "fieldtype": "Link",
+   "label": "Customer Authorization",
+   "options": "Paystack Customer Authorization",
+   "read_only": 1
   }
  ],
  "in_create": 1,
- "is_submittable": 1,
  "links": [],
- "modified": "2025-09-27 16:31:37.806933",
+ "modified": "2026-08-02 14:01:29.310904",
  "modified_by": "Administrator",
  "module": "Frappe Paystack",
  "name": "Paystack Payment Log",
@@ -189,7 +237,6 @@
    "read": 1,
    "report": 1,
    "role": "System Manager",
-   "submit": 1,
    "write": 1
   },
   {

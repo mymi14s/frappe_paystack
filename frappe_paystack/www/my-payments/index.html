@@ -1,57 +1,119 @@
-
 {% extends "templates/web.html" %}
 {% block page_content %}
-<h2>My Outstanding Invoices</h2>
-{% if not invoices %}<p>No unpaid invoices</p>{% else %}
+<h2>{{ _("My Outstanding Invoices") }}</h2>
+{% if not invoices %}<p>{{ _("No unpaid invoices") }}</p>{% else %}
+<div class="table-responsive">
 <table class="table table-bordered">
-<thead><tr><th>Invoice</th><th>Posting Date</th><th>Due Date</th><th>Outstanding</th><th>Action</th></tr></thead>
+<thead><tr>
+	<th>{{ _("Invoice") }}</th>
+	<th>{{ _("Posting Date") }}</th>
+	<th>{{ _("Due Date") }}</th>
+	<th>{{ _("Outstanding") }}</th>
+	<th>{{ _("Action") }}</th>
+</tr></thead>
 <tbody>
 {% for inv in invoices %}
 <tr>
-  <td><a href="/app/sales-invoice/{{ inv.name }}">{{ inv.name }}</a></td>
-  <td>{{ inv.posting_date }}</td>
-  <td>{{ inv.due_date }}</td>
-  <td>{{ frappe.utils.fmt_money(inv.outstanding_amount, currency=inv.currency) }}</td>
-  <td><button class="btn btn-sm btn-primary pay-now" data-doctype="Sales Invoice" data-docname="{{ inv.name }}">Pay Now</button></td>
+	<td><a href="/invoices/{{ inv.name }}">{{ inv.name }}</a></td>
+	<td>{{ inv.posting_date }}</td>
+	<td>{{ inv.due_date }}</td>
+	<td>{{ frappe.utils.fmt_money(inv.outstanding_amount, currency=inv.currency) }}</td>
+	<td>
+		{% if inv.payment_state == "open" %}
+		<button class="btn btn-sm btn-primary pay-now" data-doctype="Sales Invoice" data-docname="{{ inv.name }}">
+			{{ _("Pay Now") }}
+		</button>
+		{% else %}
+		<span class="indicator-pill orange paystack-payment-state" data-docname="{{ inv.name }}">
+			{{ _(processing_label) }}
+		</span>
+		{% endif %}
+	</td>
 </tr>
 {% endfor %}
-</tbody></table>{% endif %}
+</tbody></table>
+</div>{% endif %}
+
 <hr class="my-4">
-<h2>My Payment History</h2>
-{% if not payments %}<p>No past payments yet.</p>{% else %}
+<h2>{{ _("My Payment History") }}</h2>
+{% if not payments %}<p>{{ _("No past payments yet.") }}</p>{% else %}
+<div class="table-responsive">
 <table class="table table-striped">
-<thead><tr><th>Reference</th><th>Invoice</th><th>Amount</th><th>Currency</th><th>Status</th><th>Last Update</th><th>Receipt</th></tr></thead>
+<thead><tr>
+	<th>{{ _("Reference") }}</th>
+	<th>{{ _("Document") }}</th>
+	<th>{{ _("Amount") }}</th>
+	<th>{{ _("Status") }}</th>
+	<th>{{ _("Last Update") }}</th>
+	<th>{{ _("Receipt") }}</th>
+</tr></thead>
 <tbody>
 {% for log in payments %}
 <tr>
-  <td>{{ log.reference }}</td>
-  <td><a href="/app/sales-invoice/{{ log.linked_docname }}">{{ log.linked_docname }}</a></td>
-  <td>{{ frappe.utils.fmt_money(log.amount, currency=log.currency) }}</td>
-  <td>{{ log.currency }}</td>
-  <td>{{ log.status }}</td>
-  <td>{{ log.modified }}</td>
-  <td>{% if log.status in ["Processed","Completed"] %}
-      <a href="/api/method/frappe.utils.print_format.download_pdf?doctype=Paystack Payment Log&name={{ log.name }}&format=Paystack Receipt&no_letterhead=1" class="btn btn-sm btn-secondary" target="_blank">Download</a>
-      {% endif %}
-  </td>
+	<td>{{ log.reference }}</td>
+	<td>
+		{% if log.route %}
+		<a href="/{{ log.route }}/{{ log.linked_docname }}">{{ log.linked_docname }}</a>
+		{% else %}{{ log.linked_docname }}{% endif %}
+	</td>
+	<td>{{ frappe.utils.fmt_money(log.amount, currency=log.currency) }}</td>
+	<td>{{ _(log.status) }}</td>
+	<td>{{ log.modified }}</td>
+	<td>
+		{% if log.has_receipt %}
+		<a class="btn btn-sm btn-secondary"
+			href="/api/method/frappe_paystack.utils.portal.download_payment_receipt?reference={{ log.name | urlencode }}">
+			{{ _("Download") }}
+		</a>
+		{% endif %}
+	</td>
 </tr>
 {% endfor %}
-</tbody></table>{% endif %}
+</tbody></table>
+</div>{% endif %}
+
+{% if refunds %}
+<hr class="my-4">
+<h2>{{ _("My Refunds") }}</h2>
+<div class="table-responsive">
+<table class="table table-striped">
+<thead><tr>
+	<th>{{ _("Reference") }}</th>
+	<th>{{ _("Against Payment") }}</th>
+	<th>{{ _("Amount") }}</th>
+	<th>{{ _("Status") }}</th>
+	<th>{{ _("Last Update") }}</th>
+</tr></thead>
+<tbody>
+{% for refund in refunds %}
+<tr>
+	<td>{{ refund.refund_reference or refund.name }}</td>
+	<td>{{ refund.payment_log }}</td>
+	<td>{{ frappe.utils.fmt_money(refund.refund_amount, currency=refund.currency) }}</td>
+	<td>{{ _(refund.status) }}</td>
+	<td>{{ refund.modified }}</td>
+</tr>
+{% endfor %}
+</tbody></table>
+</div>
+{% endif %}
+
 <script>
 frappe.ready(function () {
-  $(".pay-now").click(function () {
-    const doctype = $(this).data("doctype");
-    const docname = $(this).data("docname");
-    frappe.call({
-      method: "frappe_paystack.api.create_payment_link",
-      args: { doctype: doctype, docname: docname },
-      callback: function (r) {
-        if (r.message) {
-          window.open(r.message, "_blank");
-        }
-      },
-    });
-  });
+	$(".pay-now").click(function () {
+		const button = $(this);
+		button.prop("disabled", true);
+		frappe.call({
+			method: "frappe_paystack.api.create_payment_link",
+			args: { doctype: button.data("doctype"), docname: button.data("docname") },
+			callback: function (r) {
+				button.prop("disabled", false);
+				if (r.message) {
+					window.location.href = r.message;
+				}
+			},
+		});
+	});
 });
 </script>
 {% endblock %}

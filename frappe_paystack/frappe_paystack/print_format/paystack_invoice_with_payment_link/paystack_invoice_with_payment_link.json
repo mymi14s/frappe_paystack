@@ -1,0 +1,18 @@
+{
+ "actions": [],
+ "creation": "2026-08-02 00:00:00.000000",
+ "doctype": "Print Format",
+ "document_type": "Sales Invoice",
+ "html": "<div class=\"container\">\n    <h2>{{ doc.company }}</h2>\n    <h4>Invoice {{ doc.name }}</h4>\n    <hr>\n    <div class=\"row\">\n        <div class=\"col-xs-6\">\n            <p><strong>Billed To</strong><br>{{ doc.customer_name or doc.customer }}</p>\n        </div>\n        <div class=\"col-xs-6 text-right\">\n            <p>\n                <strong>Date</strong> {{ frappe.utils.formatdate(doc.posting_date) }}<br>\n                <strong>Due</strong> {{ frappe.utils.formatdate(doc.due_date) }}\n            </p>\n        </div>\n    </div>\n    <table class=\"table table-bordered\">\n        <thead>\n            <tr>\n                <th>Item</th>\n                <th class=\"text-right\">Qty</th>\n                <th class=\"text-right\">Rate</th>\n                <th class=\"text-right\">Amount</th>\n            </tr>\n        </thead>\n        <tbody>\n            {% for row in doc.items %}\n            <tr>\n                <td>{{ row.item_name or row.item_code }}</td>\n                <td class=\"text-right\">{{ row.qty }}</td>\n                <td class=\"text-right\">{{ frappe.utils.fmt_money(row.rate, currency=doc.currency) }}</td>\n                <td class=\"text-right\">{{ frappe.utils.fmt_money(row.amount, currency=doc.currency) }}</td>\n            </tr>\n            {% endfor %}\n        </tbody>\n        <tfoot>\n            <tr>\n                <th colspan=\"3\" class=\"text-right\">Grand Total</th>\n                <th class=\"text-right\">{{ frappe.utils.fmt_money(doc.grand_total, currency=doc.currency) }}</th>\n            </tr>\n            <tr>\n                <th colspan=\"3\" class=\"text-right\">Outstanding</th>\n                <th class=\"text-right\">{{ frappe.utils.fmt_money(doc.outstanding_amount, currency=doc.currency) }}</th>\n            </tr>\n        </tfoot>\n    </table>\n\n    {% set paystack_link = paystack_payment_link(doc) %}\n    {% if paystack_link %}\n    <div style=\"border: 1px solid #d1d8dd; border-radius: 6px; padding: 12px; margin-top: 16px;\">\n        <div class=\"row\">\n            <div class=\"col-xs-8\">\n                <h5 style=\"margin-top: 0;\">Pay online</h5>\n                <p>Scan the code, or open this link to pay securely by card:</p>\n                <p style=\"word-break: break-all;\"><a href=\"{{ paystack_link }}\">{{ paystack_link }}</a></p>\n            </div>\n            <div class=\"col-xs-4 text-right\">\n                <img src=\"{{ paystack_payment_qr(doc) }}\" alt=\"Paystack payment QR code\" style=\"width: 120px; height: 120px;\">\n            </div>\n        </div>\n    </div>\n    {% endif %}\n</div>\n",
+ "line_breaks": 0,
+ "modified": "2026-08-02 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Frappe Paystack",
+ "name": "Paystack Invoice with Payment Link",
+ "owner": "Administrator",
+ "print_format_builder": 0,
+ "print_format_type": "Jinja",
+ "raw_printing": 0,
+ "row_format": "Dynamic",
+ "standard": "Yes"
+}

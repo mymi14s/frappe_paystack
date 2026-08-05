@@ -1,22 +1,70 @@
-
 name: CI
 
 on:
   push:
-    branches:
-      - version-16
   pull_request:
+  workflow_dispatch:
+    inputs:
+      frappe_branch:
+        description: 'frappe branch to build the bench from'
+        required: false
+        default: 'version-15'
+      erpnext_branch:
+        description: 'erpnext branch to install'
+        required: false
+        default: 'version-15'
 
 concurrency:
-  group: frappe-paystack-${{ github.event.number }}
+  # github.event.number is empty on push; github.ref keeps the branches separate.
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
+env:
+  # The bench apps this app is tested against, and the branch they are taken from.
+  FRAPPE_BRANCH: ${{ github.event.inputs.frappe_branch || 'version-15' }}
+  ERPNEXT_BRANCH: ${{ github.event.inputs.erpnext_branch || 'version-15' }}
+  PAYMENTS_BRANCH: version-15
+  WEBSHOP_BRANCH: version-15
+
 jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    name: Frontend
+    timeout-minutes: 30
+
+    steps:
+      - name: Clone
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          check-latest: true
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Run Vitest
+        run: npm test
+
   tests:
     runs-on: ubuntu-latest
+    name: Server (Python ${{ matrix.python-version }})
+    timeout-minutes: 60
     strategy:
       fail-fast: false
-    name: Server
+      # The ends of the requires-python range in pyproject.toml.
+      matrix:
+        python-version: ['3.10', '3.14']
+
+    # bench reads CI when it renders the Procfile.
+    env:
+      CI: 'Yes'
 
     services:
       redis-cache:
@@ -30,27 +78,30 @@ jobs:
       mariadb:
         image: mariadb:10.6
         env:
-          MYSQL_ROOT_PASSWORD: root
+          MARIADB_ROOT_PASSWORD: root
         ports:
           - 3306:3306
         options: --health-cmd="mariadb-admin ping" --health-interval=5s --health-timeout=2s --health-retries=3
 
     steps:
       - name: Clone
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Find tests
+      - name: Check for merge conflicts and syntax errors
         run: |
-          echo "Finding tests"
-          grep -rn "def test" > /dev/null
+          python -m compileall -q -f "${GITHUB_WORKSPACE}/frappe_paystack"
+          if grep -lr --exclude-dir=node_modules --exclude-dir=.git "^<<<<<<< " "${GITHUB_WORKSPACE}"; then
+            echo "::error::Found merge conflict markers"
+            exit 1
+          fi
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.14'
+          python-version: ${{ matrix.python-version }}
 
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 24
           check-latest: true
@@ -59,52 +110,115 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/*requirements.txt', '**/pyproject.toml', '**/setup.py', '**/setup.cfg') }}
+          # The interpreter is in the key, so each matrix job keeps its own cache.
+          key: ${{ runner.os }}-py${{ matrix.python-version }}-pip-${{ hashFiles('**/*requirements.txt', '**/pyproject.toml', '**/setup.py', '**/setup.cfg') }}
           restore-keys: |
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+            ${{ runner.os }}-py${{ matrix.python-version }}-pip-
+            ${{ runner.os }}-py${{ matrix.python-version }}-
 
-      - name: Get yarn cache directory path
-        id: yarn-cache-dir-path
-        run: 'echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT'
-
-      - uses: actions/cache@v4
-        id: yarn-cache
+      - name: Cache Cypress binary
+        if: ${{ matrix.python-version == '3.14' }}
+        uses: actions/cache@v4
         with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
+          path: ~/.cache/Cypress
+          key: ${{ runner.os }}-cypress-${{ hashFiles('package-lock.json') }}
+          restore-keys: ${{ runner.os }}-cypress-
 
       - name: Install MariaDB Client
         run: |
           sudo apt update
-          sudo apt-get install mariadb-client
+          sudo apt-get install -y mariadb-client
 
-      - name: Setup
+      - name: Setup bench
         run: |
           pip install frappe-bench
-          bench init --skip-redis-config-generation --skip-assets --python "$(which python)" ~/frappe-bench
+          bench init \
+            --skip-redis-config-generation \
+            --skip-assets \
+            --frappe-branch "${FRAPPE_BRANCH}" \
+            --python "$(which python)" \
+            ~/frappe-bench
           mariadb --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL character_set_server = 'utf8mb4'"
           mariadb --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL collation_server = 'utf8mb4_unicode_ci'"
 
-      - name: Install
+      - name: Install apps
         working-directory: /home/runner/frappe-bench
         run: |
-          bench get-app erpnext --branch version-16
-          bench get-app https://github.com/mymi14s/frappe_paystack --branch=version-16
+          bench get-app https://github.com/frappe/erpnext --branch "${ERPNEXT_BRANCH}" --resolve-deps
+          # frappe_paystack imports payments.utils.
+          bench get-app https://github.com/frappe/payments --branch "${PAYMENTS_BRANCH}"
+          # The storefront the webshop and portal suites run against.
+          bench get-app https://github.com/frappe/webshop --branch "${WEBSHOP_BRANCH}"
+          # actions/checkout leaves a detached HEAD; the branch names the commit.
+          git -C "${GITHUB_WORKSPACE}" checkout -B ci-run
+          # Installs the checked-out revision.
+          bench get-app frappe_paystack "${GITHUB_WORKSPACE}" --branch ci-run
           bench setup requirements --dev
+          ./env/bin/pip install coverage
+
+      - name: Create site
+        working-directory: /home/runner/frappe-bench
+        run: |
           bench new-site --db-root-password root --admin-password admin test_site
           bench --site test_site install-app erpnext
+          bench --site test_site install-app payments
+          bench --site test_site install-app webshop
           bench --site test_site install-app frappe_paystack
+          bench --site test_site set-config allow_tests true
           bench build
-        env:
-          CI: 'Yes'
 
+      # bench run-tests exits 0 when tests fail, so the wrapper reads the summary line.
       - name: Run Tests
         working-directory: /home/runner/frappe-bench
         run: |
-          bench --site test_site set-config allow_tests true
-          bench --site test_site run-tests --app frappe_paystack
+          bash apps/frappe_paystack/.github/scripts/run-tests-with-coverage.sh \
+            /home/runner/frappe-bench test_site
         env:
           TYPE: server
+
+      # The Cypress specs reuse the bench the server tests just built.
+      - name: Set up the site for UI tests
+        if: ${{ matrix.python-version == '3.14' }}
+        working-directory: /home/runner/frappe-bench
+        run: |
+          bench --site test_site execute frappe.utils.install.complete_setup_wizard
+          bench --site test_site execute frappe.utils.scheduler.disable_scheduler
+          bench --site test_site execute frappe_paystack.tests.ui_test_helpers.create_pos_test_user
+
+      - name: Start the bench
+        if: ${{ matrix.python-version == '3.14' }}
+        working-directory: /home/runner/frappe-bench
+        run: |
+          bench start &> bench_start.log &
+          timeout 180 bash -c 'until curl -sf http://localhost:8000/api/method/frappe.ping > /dev/null; do sleep 2; done'
+
+      # Runs the cypress in package.json against cypress.config.js in this checkout.
+      - name: Install Cypress
+        if: ${{ matrix.python-version == '3.14' }}
+        run: |
+          npm ci
+          npx cypress install
+          npx cypress verify
+
+      - name: Run UI Tests
+        if: ${{ matrix.python-version == '3.14' }}
+        run: npx cypress run --browser chrome
+        env:
+          CYPRESS_baseUrl: http://localhost:8000
+          CYPRESS_adminPassword: admin
+
+      - name: Upload Cypress artifacts
+        if: ${{ failure() && matrix.python-version == '3.14' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-artifacts
+          path: |
+            cypress/screenshots
+            cypress/videos
+          if-no-files-found: ignore
+
+      - name: Show bench output
+        if: ${{ always() }}
+        run: |
+          cat /home/runner/frappe-bench/bench_start.log || true
+          cat /home/runner/frappe-bench/logs/*.log || true

@@ -1,33 +1,35 @@
 import frappe
+from frappe import _
+
+from frappe_paystack.utils.portal import (
+    PROCESSING_LABEL,
+    customer_for,
+    invoices_for,
+    payments_for,
+    refunds_for,
+)
 
 
 def get_context(context: dict) -> dict:
-	if not frappe.session.user or frappe.session.user == "Guest":
-		frappe.throw("You need to be logged in", frappe.PermissionError)
-	customer = frappe.db.get_value(
-		"Contact", {"email_id": frappe.session.user}, "customer"
-	)
-	invoices = frappe.get_all(
-		"Sales Invoice",
-		filters={"customer": customer, "status": ["in", ["Unpaid", "Partly Paid"]]},
-		fields=["name", "posting_date", "due_date", "outstanding_amount", "currency"],
-	)
-	payments = frappe.get_all(
-		"Paystack Payment Log",
-		filters={"linked_doctype": "Sales Invoice"},
-		fields=[
-			"name",
-			"reference",
-			"linked_docname",
-			"amount",
-			"currency",
-			"status",
-			"modified",
-		],
-		order_by="modified desc",
-		limit=20,
-	)
-	context.invoices = invoices
-	context.payments = payments
-	context.customer = customer
-	return context
+    """Build the customer's outstanding invoices, payments and refunds."""
+    if not frappe.session.user or frappe.session.user == "Guest":
+        frappe.throw(_("You need to be logged in"), frappe.PermissionError)
+
+    customer = customer_for(frappe.session.user)
+
+    context.customer = customer
+    context.invoices = []
+    context.payments = []
+    context.refunds = []
+    # Labels a row whose payment is already under way.
+    context.processing_label = PROCESSING_LABEL
+
+    # The queries below run only once a customer is resolved.
+    if not customer:
+        return context
+
+    context.invoices = invoices_for(customer)
+    context.payments = payments_for(customer)
+    context.refunds = refunds_for(context.payments)
+
+    return context
