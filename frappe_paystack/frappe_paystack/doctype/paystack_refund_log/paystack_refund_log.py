@@ -226,6 +226,8 @@ class PaystackRefundLog(Document):
                         print_format=REFUND_RECEIPT_PRINT_FORMAT,
                     )
                 ],
+                # The receipt announces a refund the rollback can still undo.
+                enqueue_after_commit=True,
             )
         except Exception:
             frappe.log_error(

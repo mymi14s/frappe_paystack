@@ -4,15 +4,6 @@ on:
   push:
   pull_request:
   workflow_dispatch:
-    inputs:
-      frappe_branch:
-        description: 'frappe branch to build the bench from'
-        required: false
-        default: 'version-15'
-      erpnext_branch:
-        description: 'erpnext branch to install'
-        required: false
-        default: 'version-15'
 
 concurrency:
   # github.event.number is empty on push; github.ref keeps the branches separate.
@@ -23,11 +14,10 @@ permissions:
   contents: read
 
 env:
-  # The bench apps this app is tested against, and the branch they are taken from.
-  FRAPPE_BRANCH: ${{ github.event.inputs.frappe_branch || 'version-15' }}
-  ERPNEXT_BRANCH: ${{ github.event.inputs.erpnext_branch || 'version-15' }}
-  PAYMENTS_BRANCH: version-15
-  WEBSHOP_BRANCH: version-15
+  # The coverage the report is measured with. .coveragerc is written for this line.
+  # frappe pins coverage ~=6.5.0 on version-15 and ~=7.10.0 on version-16, and both
+  # legs force this version over the pin.
+  COVERAGE_VERSION: '7.15.2'
 
 jobs:
   frontend:
@@ -54,17 +44,40 @@ jobs:
 
   tests:
     runs-on: ubuntu-latest
-    name: Server (Python ${{ matrix.python-version }})
-    timeout-minutes: 60
+    name: Server (Python ${{ matrix.python }}, frappe ${{ matrix.frappe }})
+    timeout-minutes: 90
+
     strategy:
+      # Each pair reports on its own; one red leg leaves the other running.
       fail-fast: false
-      # The ends of the requires-python range in pyproject.toml.
       matrix:
-        python-version: ['3.10', '3.14']
+        # The interpreter is paired with the framework branch, not crossed with it.
+        # frappe version-15 declares requires-python >=3.10,<3.15; frappe
+        # version-16 declares >=3.14,<3.15.
+        include:
+          - python: '3.12'
+            frappe: version-15
+            erpnext: version-15
+            payments: version-15
+            webshop: version-15
+            # The Cypress specs drive the version-15 POS UI, and version-15 is the
+            # release this app ships against, so the UI suite runs on this leg.
+            ui: true
+          - python: '3.14'
+            frappe: version-16
+            erpnext: version-16
+            payments: version-16
+            webshop: version-16
+            ui: false
 
     # bench reads CI when it renders the Procfile.
     env:
       CI: 'Yes'
+      FRAPPE_BRANCH: ${{ matrix.frappe }}
+      ERPNEXT_BRANCH: ${{ matrix.erpnext }}
+      PAYMENTS_BRANCH: ${{ matrix.payments }}
+      WEBSHOP_BRANCH: ${{ matrix.webshop }}
+      PYTHON_VERSION: ${{ matrix.python }}
 
     services:
       redis-cache:
@@ -87,18 +100,20 @@ jobs:
       - name: Clone
         uses: actions/checkout@v4
 
+      - name: Setup Python
+        id: setup-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      # Compiles on the interpreter the suite runs on, so it follows setup-python.
       - name: Check for merge conflicts and syntax errors
         run: |
-          python -m compileall -q -f "${GITHUB_WORKSPACE}/frappe_paystack"
+          "${{ steps.setup-python.outputs.python-path }}" -m compileall -q -f "${GITHUB_WORKSPACE}/frappe_paystack"
           if grep -lr --exclude-dir=node_modules --exclude-dir=.git "^<<<<<<< " "${GITHUB_WORKSPACE}"; then
             echo "::error::Found merge conflict markers"
             exit 1
           fi
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -110,14 +125,15 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          # The interpreter is in the key, so each matrix job keeps its own cache.
-          key: ${{ runner.os }}-py${{ matrix.python-version }}-pip-${{ hashFiles('**/*requirements.txt', '**/pyproject.toml', '**/setup.py', '**/setup.cfg') }}
+          # The interpreter and the framework branch are in the key, so the two legs
+          # keep separate caches.
+          key: ${{ runner.os }}-py${{ matrix.python }}-${{ matrix.frappe }}-pip-${{ hashFiles('**/*requirements.txt', '**/pyproject.toml', '**/setup.py', '**/setup.cfg') }}
           restore-keys: |
-            ${{ runner.os }}-py${{ matrix.python-version }}-pip-
-            ${{ runner.os }}-py${{ matrix.python-version }}-
+            ${{ runner.os }}-py${{ matrix.python }}-${{ matrix.frappe }}-pip-
+            ${{ runner.os }}-py${{ matrix.python }}-${{ matrix.frappe }}-
 
       - name: Cache Cypress binary
-        if: ${{ matrix.python-version == '3.14' }}
+        if: ${{ matrix.ui }}
         uses: actions/cache@v4
         with:
           path: ~/.cache/Cypress
@@ -132,14 +148,27 @@ jobs:
       - name: Setup bench
         run: |
           pip install frappe-bench
+          # setup-python reports the interpreter it installed; PATH lookups can find another.
           bench init \
             --skip-redis-config-generation \
             --skip-assets \
             --frappe-branch "${FRAPPE_BRANCH}" \
-            --python "$(which python)" \
+            --python "${{ steps.setup-python.outputs.python-path }}" \
             ~/frappe-bench
           mariadb --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL character_set_server = 'utf8mb4'"
           mariadb --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL collation_server = 'utf8mb4_unicode_ci'"
+
+      # A venv built on another interpreter measures other code, so the run stops here.
+      - name: Check the bench interpreter
+        working-directory: /home/runner/frappe-bench
+        run: |
+          ./env/bin/python -VV
+          FOUND="$(./env/bin/python -c 'import sys; print("%d.%d" % sys.version_info[:2])')"
+          echo "bench venv runs Python ${FOUND}, workflow asked for ${PYTHON_VERSION}"
+          if [ "${FOUND}" != "${PYTHON_VERSION}" ]; then
+            echo "::error::bench built its venv on Python ${FOUND}, not ${PYTHON_VERSION}"
+            exit 1
+          fi
 
       - name: Install apps
         working-directory: /home/runner/frappe-bench
@@ -154,7 +183,15 @@ jobs:
           # Installs the checked-out revision.
           bench get-app frappe_paystack "${GITHUB_WORKSPACE}" --branch ci-run
           bench setup requirements --dev
-          ./env/bin/pip install coverage
+          # frappe's dev dependencies pin coverage below this line on both branches,
+          # and their branch analysis differs; this wins.
+          ./env/bin/pip install --upgrade "coverage==${COVERAGE_VERSION}"
+          FOUND="$(./env/bin/python -c 'import coverage; print(coverage.__version__)')"
+          echo "bench venv runs coverage ${FOUND}"
+          if [ "${FOUND}" != "${COVERAGE_VERSION}" ]; then
+            echo "::error::coverage ${FOUND} is installed, not ${COVERAGE_VERSION}"
+            exit 1
+          fi
 
       - name: Create site
         working-directory: /home/runner/frappe-bench
@@ -178,7 +215,7 @@ jobs:
 
       # The Cypress specs reuse the bench the server tests just built.
       - name: Set up the site for UI tests
-        if: ${{ matrix.python-version == '3.14' }}
+        if: ${{ matrix.ui }}
         working-directory: /home/runner/frappe-bench
         run: |
           bench --site test_site execute frappe.utils.install.complete_setup_wizard
@@ -186,7 +223,7 @@ jobs:
           bench --site test_site execute frappe_paystack.tests.ui_test_helpers.create_pos_test_user
 
       - name: Start the bench
-        if: ${{ matrix.python-version == '3.14' }}
+        if: ${{ matrix.ui }}
         working-directory: /home/runner/frappe-bench
         run: |
           bench start &> bench_start.log &
@@ -194,24 +231,24 @@ jobs:
 
       # Runs the cypress in package.json against cypress.config.js in this checkout.
       - name: Install Cypress
-        if: ${{ matrix.python-version == '3.14' }}
+        if: ${{ matrix.ui }}
         run: |
           npm ci
           npx cypress install
           npx cypress verify
 
       - name: Run UI Tests
-        if: ${{ matrix.python-version == '3.14' }}
+        if: ${{ matrix.ui }}
         run: npx cypress run --browser chrome
         env:
           CYPRESS_baseUrl: http://localhost:8000
           CYPRESS_adminPassword: admin
 
       - name: Upload Cypress artifacts
-        if: ${{ failure() && matrix.python-version == '3.14' }}
+        if: ${{ matrix.ui && failure() }}
         uses: actions/upload-artifact@v4
         with:
-          name: cypress-artifacts
+          name: cypress-artifacts-${{ matrix.frappe }}
           path: |
             cypress/screenshots
             cypress/videos

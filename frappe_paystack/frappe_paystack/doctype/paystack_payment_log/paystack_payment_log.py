@@ -245,6 +245,8 @@ class PaystackPaymentLog(Document):
             is_async=not frappe.flags.in_test,
             job_id=f"pe-{self.name}",
             deduplicate=True,
+            # The job reads this log, which a worker sees only once the save commits.
+            enqueue_after_commit=True,
         )
 
     def get_payment_link(self) -> str:
@@ -339,7 +341,7 @@ def create_payment_entry_from_log(payment_log_name: str) -> None:
     session_user = frappe.session.user
     booked = None
     try:
-        frappe.set_user("Administrator")
+        frappe.set_user("Administrator")  # nosemgrep - reading account balances needs a system user
         log = frappe.get_doc("Paystack Payment Log", payment_log_name)
 
         if not (log.linked_doctype and log.linked_docname):
@@ -418,7 +420,7 @@ def create_payment_entry_from_log(payment_log_name: str) -> None:
             ),
         )
     finally:
-        frappe.set_user(session_user)
+        frappe.set_user(session_user)  # nosemgrep - restores the caller the job started as
 
 
 def settle_payment_request(log: Any) -> None:
@@ -503,7 +505,7 @@ def record_retry(payment_log_name: str) -> None:
         },
         update_modified=False,
     )
-    frappe.db.commit()
+    frappe.db.commit()  # nosemgrep - the attempt is counted before the attempt can crash
 
 
 def clear_retries(payment_log_name: str) -> None:
@@ -514,7 +516,7 @@ def clear_retries(payment_log_name: str) -> None:
         {"retry_count": 0, "last_retry": None},
         update_modified=False,
     )
-    frappe.db.commit()
+    frappe.db.commit()  # nosemgrep - the cleared back-off outlives a later rollback
 
 
 def stuck_captures(extra: dict, limit: int = 0) -> list:
@@ -560,7 +562,7 @@ def abandon_settlement(payment_log_name: str, cause: str) -> None:
         update_modified=False,
     )
     frappe.clear_document_cache(PAYMENT_LOG, payment_log_name)
-    frappe.db.commit()
+    frappe.db.commit()  # nosemgrep - Needs Attention is durable before the alert is raised
 
     log_error_for(
         title=f"Paystack settlement abandoned for log {payment_log_name}",
@@ -654,7 +656,7 @@ def completion_key(payment_log_name: str) -> str:
 def hold_completion(payment_log_name: str) -> bool:
     """Claim a log's single in-flight completion, returning True for the caller that takes it."""
     return bool(
-        frappe.cache.set(
+        frappe.cache.set(  # nosemgrep - make_key scopes the key to the site; nx needs raw set
             completion_key(payment_log_name),
             frappe.session.user,
             ex=COMPLETION_LOCK_TTL,
@@ -665,7 +667,7 @@ def hold_completion(payment_log_name: str) -> bool:
 
 def completion_held(payment_log_name: str) -> bool:
     """Report whether a completion of this log is already in flight."""
-    return bool(frappe.cache.get(completion_key(payment_log_name)))
+    return bool(frappe.cache.get(completion_key(payment_log_name)))  # nosemgrep - site-scoped by make_key
 
 
 def release_completion(payment_log_name: str) -> None:
@@ -764,7 +766,7 @@ def publish_completion(payment_log_name: str, user: str, message: str, payment_e
 def refuse_completion(payment_log_name: str, user: str, reason: str) -> None:
     """Record why nothing was booked, commit it and report it."""
     frappe.db.set_value(PAYMENT_LOG, payment_log_name, "errors", reason)
-    frappe.db.commit()
+    frappe.db.commit()  # nosemgrep - the refusal reason is durable before it is published
     publish_completion(payment_log_name, user, reason, None)
 
 

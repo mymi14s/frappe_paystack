@@ -207,6 +207,13 @@ class TestPaymentRequestGuard(PaystackTestCase):
         self.assertNotIn("job_name", enqueue.call_args.kwargs)
         self.assertTrue(enqueue.call_args.kwargs["job_id"].startswith("pe-"))
 
+    def test_the_job_waits_for_the_save_to_commit(self) -> None:
+        """The settlement fallback holds its job until the log is committed."""
+        with patch("frappe.enqueue") as enqueue:
+            self.build_log().on_update()
+
+        self.assertTrue(enqueue.call_args.kwargs["enqueue_after_commit"])
+
     def test_the_job_is_deduplicated_on_the_log(self) -> None:
         """The settlement fallback lets the queue turn away a job it already holds."""
         with patch("frappe.enqueue") as enqueue:

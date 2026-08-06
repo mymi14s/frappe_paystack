@@ -180,7 +180,7 @@ def notify_payment_authorized(log: Any) -> None:
 
     session_user = frappe.session.user
     try:
-        frappe.set_user("Administrator")
+        frappe.set_user("Administrator")  # nosemgrep - the guest webhook needs a system user here
 
         if not frappe.db.exists("Payment Request", log.payment_request):
             return
@@ -219,7 +219,7 @@ def notify_payment_authorized(log: Any) -> None:
             reference_name=log.name,
         )
     finally:
-        frappe.set_user(session_user)
+        frappe.set_user(session_user)  # nosemgrep - restores the caller the webhook arrived as
 
 
 def notify_pos_payment(reference: str, amount: float, success: bool, message: str = "") -> None:
@@ -349,7 +349,7 @@ def rate_limited_webhook(fn):
     return wrapper
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=True)  # nosemgrep - guest by design; signature and IP allowlist guard it
 @rate_limited_webhook
 @rate_limit(limit=WEBHOOK_IP_LIMIT, seconds=WEBHOOK_RATE_WINDOW)
 def paystack_webhook() -> None:
@@ -688,7 +688,7 @@ def create_payment_link(
     return reference.get_payment_link()
 
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist(allow_guest=True)  # nosemgrep - guest by design; the hash-named log is the only reference
 def validate_payment_link(docname: str) -> dict:
     """Return payment data for the checkout page."""
     if frappe.db.exists(LOG_DOCTYPE, docname):
@@ -714,7 +714,7 @@ def payable_log(reference: str) -> Any:
     return log
 
 
-@frappe.whitelist(allow_guest=True, methods=["POST"])
+@frappe.whitelist(allow_guest=True, methods=["POST"])  # nosemgrep - guest by design; rate limited, POST only
 @rate_limit(limit=HOSTED_CHECKOUT_LIMIT, seconds=HOSTED_CHECKOUT_WINDOW)
 def start_hosted_checkout(reference: str, email: Optional[str] = None) -> str:
     """
@@ -852,7 +852,7 @@ def charge_saved_card(
 
 def keep_failure_state() -> None:
     """Keep what a failure path recorded through Frappe's rollback."""
-    frappe.db.commit()
+    frappe.db.commit()  # nosemgrep - the failure record is written before a throw that rolls back
 
 
 def report_charge_outcome(log: Any, result: dict) -> None:

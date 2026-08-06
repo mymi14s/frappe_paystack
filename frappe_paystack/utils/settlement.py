@@ -157,7 +157,7 @@ def settlement_gateway(company: Optional[str]) -> Optional[Any]:
 def missing_settlement_accounts(gateway: Any) -> list:
     """Return the labels of the accounts a payout entry cannot be built without."""
     return [
-        gateway.meta.get_label(fieldname)
+        _(gateway.meta.get_label(fieldname))
         for fieldname in (
             "suspense_account",
             "settlement_bank_account",
@@ -292,7 +292,7 @@ def post_settlement_entry(settlement: Any) -> Optional[str]:
     reason = unpostable_reason(settlement, gateway)
     if reason:
         settlement.db_set("errors", reason, update_modified=False)
-        frappe.db.commit()
+        frappe.db.commit()  # nosemgrep - the unpostable reason is written before the early return
         return None
 
     entry = None
@@ -319,7 +319,7 @@ def post_settlement_entry(settlement: Any) -> Optional[str]:
     settlement.db_set("journal_entry", entry.name, update_modified=False)
     settlement.db_set("status", "Processed", update_modified=False)
     settlement.db_set("errors", None, update_modified=False)
-    frappe.db.commit()
+    frappe.db.commit()  # nosemgrep - the booked journal entry outlives a later rollback
 
     return entry.name
 
@@ -422,7 +422,7 @@ def link_settled_payments(settlement_name: str) -> int:
         )
         linked += 1
 
-    frappe.db.commit()
+    frappe.db.commit()  # nosemgrep - the linked captures are kept when a later page fails
     return linked
 
 

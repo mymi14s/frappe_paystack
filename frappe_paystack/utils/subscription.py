@@ -128,7 +128,7 @@ def collect_subscription_payments() -> None:
     """
     session_user = frappe.session.user
     try:
-        frappe.set_user("Administrator")
+        frappe.set_user("Administrator")  # nosemgrep - the scheduled collection needs a system user
 
         for invoice in collection_queue():
             try:
@@ -141,4 +141,4 @@ def collect_subscription_payments() -> None:
                     reference_name=invoice,
                 )
     finally:
-        frappe.set_user(session_user)
+        frappe.set_user(session_user)  # nosemgrep - restores the caller the job started as

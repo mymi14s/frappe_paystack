@@ -87,7 +87,7 @@ class PaystackGatewaySetting(Document):
         """Throw on live keys under Test Mode, and on test keys outside it."""
         for fieldname in KEY_FIELDS:
             key = self.get_password(fieldname, raise_exception=False) or ""
-            label = self.meta.get_label(fieldname)
+            label = _(self.meta.get_label(fieldname))
 
             if self.test_mode and key.startswith(LIVE_KEY_PREFIXES):
                 frappe.throw(
@@ -116,7 +116,7 @@ class PaystackGatewaySetting(Document):
             if owner != self.company:
                 frappe.throw(
                     _("{0} {1} belongs to {2}, not {3}.").format(
-                        self.meta.get_label(fieldname), account, owner, self.company
+                        _(self.meta.get_label(fieldname)), account, owner, self.company
                     )
                 )
 

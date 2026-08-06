@@ -413,7 +413,7 @@ def validate_payment(doc: Document) -> Any:
             reference_doctype="Paystack Payment Log",
             reference_docname=doc.name,
         )
-        frappe.throw(_("Failed to verify Paystack transaction: {0}").format(e))
+        frappe.throw(_("Failed to verify Paystack transaction: {0}").format(str(e)))
 
     return data
 
@@ -657,7 +657,7 @@ def initiate_refund(
             reference_doctype="Paystack Refund Log",
             reference_docname=refund_log,
         )
-        frappe.throw(_("Failed to initiate Paystack refund: {0}").format(e))
+        frappe.throw(_("Failed to initiate Paystack refund: {0}").format(str(e)))
 
     if not data.get("status"):
         frappe.throw(_("Paystack refund failed: {0}").format(data.get("message", _("Unknown error"))))

@@ -55,7 +55,7 @@ def build_payment_log(invoice, amount: float):
 
 def render_email(invoice, amount: float, url: str) -> str:
     """Render the payment link email, showing what is being paid for."""
-    return frappe.render_template(
+    return frappe.render_template(  # nosemgrep - the template path is a constant
         "frappe_paystack/templates/emails/pos_payment_link.html",
         {
             "invoice": invoice,

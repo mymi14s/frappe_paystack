@@ -102,7 +102,7 @@ def get_data(filters: dict) -> list:
         res.raise_for_status()
         response = res.json()
     except Exception as e:
-        frappe.throw(_("Paystack API Error: {0}").format(e))
+        frappe.throw(_("Paystack API Error: {0}").format(str(e)))
 
     data = []
     if response.get("status"):

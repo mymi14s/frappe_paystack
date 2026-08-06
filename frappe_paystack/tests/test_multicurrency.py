@@ -11,6 +11,7 @@ from frappe_paystack.frappe_paystack.doctype.paystack_payment_log.paystack_payme
 )
 from frappe_paystack.tests.factories import (
     CreditNoteFactory,
+    CurrencyExchangeFactory,
     CustomerFactory,
     GatewaySettingFactory,
     PaymentLogFactory,
@@ -21,6 +22,8 @@ from frappe_paystack.tests.factories import (
 )
 from frappe_paystack.tests.test_base import PaystackTestCase
 from frappe_paystack.utils import outstanding_rate, party_account_for, party_account_rate
+
+from erpnext.setup.utils import get_exchange_rate
 
 TEST_COMPANY = "_Test Company"
 COMPANY_CURRENCY = "INR"
@@ -55,11 +58,17 @@ class MultiCurrencyTestCase(PaystackTestCase):
     auto_refund = False
 
     def setUp(self) -> None:
-        """Enable Paystack for the test company."""
+        """Enable Paystack for the test company and post the rate the fixtures convert at."""
         super().setUp()
         # Runs last, once every invoice is gone.
         self.addCleanup(CustomerFactory.cleanup, BASE_RECEIVABLE_CUSTOMER)
         self.addCleanup(CustomerFactory.cleanup, FOREIGN_CUSTOMER)
+
+        # Outranks every USD rate the site already carries.
+        self.exchange_rate_name = CurrencyExchangeFactory.create(
+            FOREIGN_CURRENCY, COMPANY_CURRENCY, CONVERSION_RATE
+        )
+        self.addCleanup(CurrencyExchangeFactory.cleanup, self.exchange_rate_name)
 
         self.gateway_name = GatewaySettingFactory.create(auto_refund=self.auto_refund)
         self.addCleanup(GatewaySettingFactory.cleanup, self.gateway_name)
@@ -131,6 +140,19 @@ class TestForeignCurrencyInvoice(MultiCurrencyTestCase):
         doc = frappe.get_doc("Sales Invoice", invoice)
 
         self.assertAlmostEqual(get_payable_amount(doc), 100.0, places=2)
+
+
+class TestAmbientExchangeRate(MultiCurrencyTestCase):
+    """The site-wide rate ERPNext converts these fixtures by."""
+
+    def test_the_site_rate_is_the_rate_the_fixtures_are_raised_at(self) -> None:
+        """Every rate ERPNext reads for USD is the rate the invoices carry."""
+        for purpose in ("for_selling", "for_buying", None):
+            self.assertAlmostEqual(
+                flt(get_exchange_rate(FOREIGN_CURRENCY, COMPANY_CURRENCY, frappe.utils.today(), purpose)),
+                CONVERSION_RATE,
+                places=4,
+            )
 
 
 class TestForeignCurrencyPaymentEntry(MultiCurrencyTestCase):

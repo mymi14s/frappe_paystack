@@ -173,7 +173,7 @@ class TestPaystackPaymentLog(PaystackTestCase):
         log_name = PaymentLogFactory.create(status="Pending", amount=1000)
         self.addCleanup(PaymentLogFactory.cleanup, log_name)
         self.addCleanup(delete_error_logs, log_name)
-        frappe.db.commit()
+        frappe.db.commit()  # nosemgrep - the baseline is durable for the rollback under test
 
         self.refuse_a_save(log_name)
         frappe.db.rollback()

@@ -1,13 +1,17 @@
 # Copyright (c) 2023, Anthony C. Emmanuel and Contributors
 # See license.txt
 
+from unittest.mock import patch
+
 import frappe
 
 from frappe_paystack.tests.factories import GatewaySettingFactory, cleanup_doc, ensure_mode_of_payment
-from frappe_paystack.tests.test_base import PaystackTestCase
+from frappe_paystack.tests.test_base import PaystackTestCase, marked_translation
 from frappe_paystack.utils import SUPPORTED_CURRENCIES
 
 TEST_COMPANY = "_Test Company"
+
+GATEWAY_MODULE = "frappe_paystack.frappe_paystack.doctype.paystack_gateway_setting.paystack_gateway_setting"
 
 # A supported Paystack currency other than the test company's own.
 FOREIGN_CURRENCY = "GHS"
@@ -333,6 +337,16 @@ class TestKeyMode(PaystackTestCase):
         setting = self.build("Gateway Custom Keys", "custom_secret", "custom_public", 0)
 
         self.assertTrue(self.save(setting).name)
+
+    def test_a_refused_key_names_a_translated_label(self) -> None:
+        """The key-mode refusal puts the Secret Key label through the translator."""
+        setting = self.build("Gateway Translated Label", "sk_test_1", "pk_test_1", 0)
+
+        with patch(f"{GATEWAY_MODULE}._", marked_translation):
+            with self.assertRaises(frappe.ValidationError) as caught:
+                setting.insert()
+
+        self.assertIn(marked_translation("Secret Key"), str(caught.exception))
 
     def test_a_saved_gateway_is_rechecked_from_the_stored_key(self) -> None:
         """A reloaded gateway is rechecked against its stored key."""

@@ -42,6 +42,7 @@ def execute(filters: Optional[dict] = None) -> tuple:
         conditions.append("coalesce(si.customer, so.customer) = %(customer)s")
         values["customer"] = filters["customer"]
 
+    # nosemgrep - the interpolated text is fixed literals; values are bound
     q = f"""
         select
             coalesce(si.customer, so.customer) as customer,

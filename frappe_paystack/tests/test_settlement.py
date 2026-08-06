@@ -23,7 +23,7 @@ from frappe_paystack.tests.factories import (
     PaymentLogFactory,
     SettlementFactory,
 )
-from frappe_paystack.tests.test_base import PaystackTestCase
+from frappe_paystack.tests.test_base import PaystackTestCase, marked_translation
 from frappe_paystack.utils import hmac_sha512
 from frappe_paystack.utils.settlement import (
     SETTLEMENT_DOCTYPE,
@@ -32,6 +32,7 @@ from frappe_paystack.utils.settlement import (
     discard_draft_entry,
     enqueue_transaction_linkage,
     link_settled_payments,
+    missing_settlement_accounts,
     post_settlement_entry,
     process_settlement_webhook_event,
     retry_unposted_settlements,
@@ -43,6 +44,9 @@ from frappe_paystack.utils.settlement import (
 
 PAYMENT_LOG = "Paystack Payment Log"
 GATEWAY_DOCTYPE = "Paystack Gateway Setting"
+
+SETTLEMENT_MODULE = "frappe_paystack.utils.settlement"
+GATEWAY_MODULE = "frappe_paystack.frappe_paystack.doctype.paystack_gateway_setting.paystack_gateway_setting"
 
 LEDGER_REPORT_MODULE = (
     "frappe_paystack.frappe_paystack.report.paystack_settlements_vs_ledger.paystack_settlements_vs_ledger"
@@ -507,6 +511,22 @@ class TestSettlementRefusals(SettlementTestCase):
 
         self.assertIn("Settlement Bank Account", settlement.errors)
         self.assertIn("Paystack Fee Account", settlement.errors)
+
+    def test_the_missing_account_labels_are_translated(self) -> None:
+        """Each account the gateway is missing is named through the translator."""
+        GatewaySettingFactory.configure_settlement(self.gateway, self.suspense, None, None)
+        gateway = frappe.get_doc(GATEWAY_DOCTYPE, self.gateway)
+
+        with patch(f"{SETTLEMENT_MODULE}._", marked_translation):
+            labels = missing_settlement_accounts(gateway)
+
+        self.assertEqual(
+            labels,
+            [
+                marked_translation("Settlement Bank Account"),
+                marked_translation("Paystack Fee Account"),
+            ],
+        )
 
     def test_a_company_without_a_gateway_is_not_booked(self) -> None:
         """A payout for a company with no enabled gateway names 'not enabled'."""
@@ -1001,6 +1021,22 @@ class TestSettlementAccountValidation(SettlementTestCase):
 
         with self.assertRaises(frappe.ValidationError):
             setting.save()
+
+    def test_a_foreign_account_refusal_names_a_translated_label(self) -> None:
+        """The wrong-company refusal puts the account's label through the translator."""
+        other = LedgerAccountFactory.create(
+            "Test Paystack Foreign Bank", "Asset", "Bank", company="_Test Company 2"
+        )
+        self.addCleanup(LedgerAccountFactory.cleanup, other)
+
+        setting = frappe.get_doc(GATEWAY_DOCTYPE, self.gateway)
+        setting.settlement_bank_account = other
+
+        with patch(f"{GATEWAY_MODULE}._", marked_translation):
+            with self.assertRaises(frappe.ValidationError) as caught:
+                setting.validate_settlement_accounts()
+
+        self.assertIn(marked_translation("Settlement Bank Account"), str(caught.exception))
 
     def test_an_account_from_the_same_company_is_accepted(self) -> None:
         """An account from the gateway's own company saves."""

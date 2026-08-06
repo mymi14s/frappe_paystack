@@ -219,6 +219,52 @@ class LedgerAccountFactory:
         cleanup_doc("Account", name)
 
 
+class CurrencyExchangeFactory:
+    """Factory for the site-wide rate a foreign-currency document converts at."""
+
+    DOCTYPE = "Currency Exchange"
+
+    # The rates create() inserted. cleanup() removes only these.
+    inserted = set()
+
+    @classmethod
+    def create(cls, from_currency: str, to_currency: str, exchange_rate: float) -> str:
+        """Post today's rate between two currencies, for buying and for selling.
+
+        A rate dated today outranks every earlier record the site carries.
+        """
+        filters = {"date": today(), "from_currency": from_currency, "to_currency": to_currency}
+        name = frappe.db.get_value(cls.DOCTYPE, filters, "name")
+        if name:
+            return name
+
+        rate = frappe.get_doc(
+            {
+                "doctype": cls.DOCTYPE,
+                "date": today(),
+                "from_currency": from_currency,
+                "to_currency": to_currency,
+                "exchange_rate": exchange_rate,
+                "for_buying": 1,
+                "for_selling": 1,
+            }
+        )
+        rate.flags.ignore_permissions = True
+        rate.insert()
+        frappe.db.commit()
+        cls.inserted.add(rate.name)
+        return rate.name
+
+    @classmethod
+    def cleanup(cls, name: str) -> None:
+        """Delete a rate create() inserted."""
+        if name not in cls.inserted:
+            return
+
+        cls.inserted.discard(name)
+        cleanup_doc(cls.DOCTYPE, name)
+
+
 class SettlementFactory:
     """Factory for recorded Paystack payouts."""
 

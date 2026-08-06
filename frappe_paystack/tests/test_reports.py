@@ -19,7 +19,7 @@ from frappe_paystack.tests.factories import (
     PaymentLogFactory,
     SalesInvoiceFactory,
 )
-from frappe_paystack.tests.test_base import PaystackTestCase
+from frappe_paystack.tests.test_base import FORMAT_MARKER, MisformattedError, PaystackTestCase
 
 # Roles every Paystack report is held to.
 PAYSTACK_REPORT_ROLES = ("System Manager", "Accounts Manager", "Accounts User")
@@ -251,6 +251,15 @@ class TestPaystackTransactionsFilters(TransactionsReportTestCase):
         with patch(TRANSACTIONS_REQUESTS, side_effect=requests.ConnectionError("down")):
             with self.assertRaises(frappe.ValidationError):
                 paystack_transactions.execute(frappe._dict({"gateway": self.gateway}))
+
+    def test_api_error_names_the_transport_error(self) -> None:
+        """The report failure reports the exception's own text."""
+        with patch(TRANSACTIONS_REQUESTS, side_effect=MisformattedError("socket closed")):
+            with self.assertRaises(frappe.ValidationError) as caught:
+                paystack_transactions.execute(frappe._dict({"gateway": self.gateway}))
+
+        self.assertIn("socket closed", str(caught.exception))
+        self.assertNotIn(FORMAT_MARKER, str(caught.exception))
 
     def test_http_error_is_reported_to_the_user(self) -> None:
         """A non-2xx Paystack response surfaces as a validation error."""

@@ -96,7 +96,7 @@ class ReconciliationEngine:
             else:
                 tally["pending"] += 1
 
-            frappe.db.commit()
+            frappe.db.commit()  # nosemgrep - each reconciled log is kept when a later log fails
 
         return {"total": len(payment_logs), **tally}
 

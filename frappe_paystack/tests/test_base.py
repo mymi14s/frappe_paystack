@@ -25,6 +25,9 @@ PROPERTY_SETTER = "Property Setter"
 
 PAYSTACK = "Paystack"
 
+# The text __format__ substitutes when a message interpolates an exception itself.
+FORMAT_MARKER = "FORMAT-NOT-STR"
+
 # The POS Invoice field setup_pos_payment_mode adds by ALTER TABLE.
 POS_EMAIL_FIELD = {"dt": "POS Invoice", "fieldname": "contact_email"}
 
@@ -71,6 +74,19 @@ def restore_gateway_setting_enabled(name: str) -> None:
     frappe.db.set_value(GATEWAY_SETTING, name, "enabled", 1, update_modified=False)
     frappe.clear_document_cache(GATEWAY_SETTING, name)
     frappe.db.commit()
+
+
+class MisformattedError(Exception):
+    """An exception whose format() rendering differs from its text."""
+
+    def __format__(self, format_spec: str) -> str:
+        """Return the marker every format() interpolation of this exception carries."""
+        return FORMAT_MARKER
+
+
+def marked_translation(text: str) -> str:
+    """Return a translation wrapping every string that reaches the translator."""
+    return f"[{text}]"
 
 
 class PaystackTestCase(FrappeTestCase):

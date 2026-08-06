@@ -172,7 +172,7 @@ function core_request_for_payment(frm) {
 								});
 							} else if (frappe.dom.freeze_count != 0) {
 								frappe.dom.unfreeze();
-								cur_frm.reload_doc();
+								cur_frm.reload_doc();  // nosemgrep - ports ERPNext's own POS flow, which drives the global form
 								cur_pos.payment.events.submit_invoice();
 								frappe.show_alert({
 									message: __("Payment of {0} received successfully.", [

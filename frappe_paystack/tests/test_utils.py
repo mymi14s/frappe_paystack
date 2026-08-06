@@ -12,7 +12,7 @@ import requests
 from frappe.model.document import Document
 
 from frappe_paystack.tests.factories import TEST_COMPANY, GatewaySettingFactory, PaymentLogFactory
-from frappe_paystack.tests.test_base import PaystackTestCase
+from frappe_paystack.tests.test_base import FORMAT_MARKER, MisformattedError, PaystackTestCase
 from frappe_paystack.utils import (
     SUPPORTED_CURRENCIES,
     charge_authorization,
@@ -43,6 +43,7 @@ GATEWAY_DOCTYPE = "Paystack Gateway Setting"
 SECRET_KEY = "sk_test_123"
 COMPANY_WITHOUT_PAYSTACK = "_Test Company 2"
 
+UTILS_GET = "frappe_paystack.utils.utils.requests.get"
 UTILS_POST = "frappe_paystack.utils.utils.requests.post"
 UTILS_REQUEST_LOG = "frappe_paystack.utils.utils.create_request_log"
 
@@ -832,6 +833,46 @@ class TestInitiateRefundNetworkFailure(PaystackTestCase):
         latest = frappe.get_last_doc("Integration Request")
         self.assertEqual(latest.status, "Failed")
         self.assertIn("timed out", latest.error)
+
+
+class TestThrownExceptionText(PaystackTestCase):
+    """A thrown Paystack message carries the exception's text, not its format() rendering."""
+
+    def setUp(self) -> None:
+        """Enable a Paystack gateway for the test company."""
+        super().setUp()
+        self.gateway = GatewaySettingFactory.create()
+        self.addCleanup(GatewaySettingFactory.cleanup, self.gateway)
+
+    @patch("frappe_paystack.utils.utils.resolve_paystack_settings")
+    def test_a_failed_verification_names_the_transport_error(self, mock_settings) -> None:
+        """The verification failure reports the exception's own text."""
+        mock_settings.return_value = {"secret_key": SECRET_KEY}
+
+        doc = MagicMock()
+        doc.company = TEST_COMPANY
+        doc.name = "TEST-LOG-VERIFY-FORMAT"
+
+        with patch(UTILS_GET, side_effect=MisformattedError("socket closed")):
+            with self.assertRaises(frappe.ValidationError) as caught:
+                validate_payment(doc)
+
+        self.assertIn("socket closed", str(caught.exception))
+        self.assertNotIn(FORMAT_MARKER, str(caught.exception))
+
+    def test_a_failed_refund_names_the_transport_error(self) -> None:
+        """The refund failure reports the exception's own text."""
+        with patch(UTILS_POST, side_effect=MisformattedError("socket closed")):
+            with self.assertRaises(frappe.ValidationError) as caught:
+                initiate_refund(
+                    transaction_id="ref_format",
+                    amount=100,
+                    currency="NGN",
+                    company=TEST_COMPANY,
+                )
+
+        self.assertIn("socket closed", str(caught.exception))
+        self.assertNotIn(FORMAT_MARKER, str(caught.exception))
 
 
 class TestFailureReporting(PaystackTestCase):

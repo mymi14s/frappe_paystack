@@ -1176,6 +1176,17 @@ class TestRefundReceiptEmail(PaystackTestCase):
         self.assertEqual(kwargs["reference_doctype"], REFUND_LOG)
         self.assertEqual(kwargs["attachments"], [{"fname": "receipt.pdf"}])
 
+    def test_receipt_waits_for_the_refund_to_commit(self) -> None:
+        """The receipt holds its job until the refund is committed."""
+        self.set_customer_email(RECEIPT_EMAIL)
+        doc = self.completed_refund_log()
+
+        with patch("frappe.attach_print", return_value={"fname": "receipt.pdf"}):
+            with patch("frappe.enqueue") as mock_enqueue:
+                doc.send_refund_receipt_email()
+
+        self.assertTrue(mock_enqueue.call_args.kwargs["enqueue_after_commit"])
+
     def test_receipt_is_priced_in_the_refunds_own_currency(self) -> None:
         """The receipt formats refund_amount in the Refund Log's own currency."""
         self.set_customer_email(RECEIPT_EMAIL)
