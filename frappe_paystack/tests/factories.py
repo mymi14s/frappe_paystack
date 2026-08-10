@@ -12,6 +12,8 @@ from frappe.utils import add_days, flt, getdate, random_string, today
 
 from frappe_paystack.setup import ensure_mode_of_payment as setup_ensure_mode_of_payment
 
+FRAPPE_MAJOR_VERSION = int(frappe.__version__.split(".")[0])
+
 # A desk role carrying no Paystack or accounting permission. version-16 dropped
 # frappe's Blogger role, so the permission tests own this one.
 UNPRIVILEGED_ROLE = "_Test Paystack Unprivileged"
