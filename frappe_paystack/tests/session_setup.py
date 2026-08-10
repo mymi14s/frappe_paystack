@@ -10,21 +10,25 @@ import frappe
 from frappe.desk.page.setup_wizard.setup_wizard import setup_complete
 from frappe.utils.data import now_datetime
 
-from frappe_paystack.tests.factories import ensure_unprivileged_role
+from frappe_paystack.tests.factories import TEST_COMPANY, ensure_unprivileged_role
 
 from erpnext.setup.utils import _enable_all_roles_for_admin, set_defaults_for_tests
 
 FRAPPE_MAJOR_VERSION = int(frappe.__version__.split(".")[0])
 
+# Paystack charges this. The ERPNext fixtures raise the company in INR, which it refuses.
+COMPANY_CURRENCY = "NGN"
+COMPANY_COUNTRY = "Nigeria"
+
 # The company frappe's test-record machinery raises _Test Company against.
 SETUP_WIZARD_ARGS = {
-    "currency": "USD",
+    "currency": "NGN",
     "full_name": "Test User",
     "company_name": "Wind Power LLC",
-    "timezone": "America/New_York",
+    "timezone": "Africa/Lagos",
     "company_abbr": "WP",
     "industry": "Manufacturing",
-    "country": "United States",
+    "country": "Nigeria",
     "language": "english",
     "company_tagline": "Testing",
     "email": "test@erpnext.com",
@@ -65,10 +69,45 @@ def raise_erpnext_baseline() -> None:
     bootstrap_erpnext_test_data()
 
 
+def bill_the_test_company_in_a_paystack_currency() -> None:
+    """
+    Put the test company and its ledgers in a currency Paystack charges.
+
+    The fixtures pin account_currency, so the accounts do not follow the company
+    on their own. Written straight to the table because the controllers refuse a
+    currency change, and no entry has been posted yet.
+    """
+    frappe.db.set_value("Company", TEST_COMPANY, "default_currency", COMPANY_CURRENCY)
+    frappe.db.set_value("Company", TEST_COMPANY, "country", COMPANY_COUNTRY)
+
+    for account in frappe.get_all(
+        "Account",
+        filters={"company": TEST_COMPANY, "is_group": 0},
+        pluck="name",
+    ):
+        frappe.db.set_value("Account", account, "account_currency", COMPANY_CURRENCY)
+
+    # Selling documents read the rate from the price list, so it is moved too.
+    for price_list in frappe.get_all("Price List", pluck="name"):
+        frappe.db.set_value("Price List", price_list, "currency", COMPANY_CURRENCY)
+
+    # A customer billed in another currency needs a receivable in that currency.
+    for customer in frappe.get_all("Customer", filters={"default_currency": ["!=", ""]}, pluck="name"):
+        frappe.db.set_value("Customer", customer, "default_currency", COMPANY_CURRENCY)
+
+    # The rate every fixture document converts at.
+    frappe.db.set_single_value("Global Defaults", "default_currency", COMPANY_CURRENCY)
+    frappe.db.set_single_value("Global Defaults", "country", COMPANY_COUNTRY)
+    frappe.db.set_single_value("System Settings", "country", COMPANY_COUNTRY)
+
+    frappe.clear_cache()
+
+
 def before_tests() -> None:
     """Prepare the site for a frappe_paystack test session."""
     frappe.clear_cache()
     raise_erpnext_baseline()
+    bill_the_test_company_in_a_paystack_currency()
     ensure_unprivileged_role()
     _enable_all_roles_for_admin()
     set_defaults_for_tests()

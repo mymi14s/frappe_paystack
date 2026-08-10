@@ -1,7 +1,9 @@
 name: CI
 
 on:
+  # A branch with an open pull request is covered by the pull_request event.
   push:
+    branches: [version-15, main]
   pull_request:
   workflow_dispatch:
 
