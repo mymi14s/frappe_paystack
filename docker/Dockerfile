@@ -5,7 +5,8 @@ FROM python:${PYTHON_VERSION}-bookworm AS base
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PYTHONUNBUFFERED=1
+    PYTHONUNBUFFERED=1 \
+    CYPRESS_INSTALL_BINARY=0
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         ca-certificates \

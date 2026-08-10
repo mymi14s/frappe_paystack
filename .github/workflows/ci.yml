@@ -190,6 +190,9 @@ jobs:
       PAYMENTS_BRANCH: ${{ matrix.payments }}
       WEBSHOP_BRANCH: ${{ matrix.webshop }}
       PYTHON_VERSION: ${{ matrix.python }}
+      # bench get-app runs yarn install, which downloads the Cypress binary.
+      # The UI step installs it where it is used.
+      CYPRESS_INSTALL_BINARY: '0'
 
     services:
       redis-cache:
@@ -348,6 +351,8 @@ jobs:
           npm ci
           npx cypress install
           npx cypress verify
+        env:
+          CYPRESS_INSTALL_BINARY: '1'
 
       - name: Run UI Tests
         if: ${{ matrix.ui }}

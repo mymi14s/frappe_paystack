@@ -95,6 +95,12 @@ def cleanup_doc(doctype: str, name: str) -> None:
 
     doc = frappe.get_doc(doctype, name)
 
+    # ERPNext refuses to cancel a Payment Request its document was paid against.
+    if doctype == "Payment Request" and doc.docstatus == 1:
+        cleanup_linked_payment_entries(doc.reference_doctype, doc.reference_name)
+        # Cancelling those entries bumps this document's timestamp.
+        doc.reload()
+
     if doc.docstatus == 1:
         doc.flags.ignore_permissions = True
         doc.cancel()

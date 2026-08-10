@@ -102,6 +102,10 @@ def build_payment_request(doc: Any, amount: float, email: Optional[str] = None) 
     request.payment_channel = "Email"
     request.flags.mute_email = True
 
+    # version-16 bills a paid Sales Order only when this is set.
+    if request.reference_doctype == "Sales Order" and request.meta.has_field("make_sales_invoice"):
+        request.make_sales_invoice = 1
+
     # make_payment_request hands back an unsaved draft.
     if request.get("__unsaved"):
         request.insert(ignore_permissions=True)
