@@ -15,6 +15,7 @@ from frappe_paystack.frappe_paystack.doctype.paystack_refund_log.paystack_refund
 )
 from frappe_paystack.tests.factories import (
     TEST_COMPANY,
+    UNPRIVILEGED_ROLE,
     CreditNoteFactory,
     CustomerFactory,
     GatewaySettingFactory,
@@ -1261,7 +1262,7 @@ class TestRefundReceiptPermission(PaystackTestCase):
                     "email": OUTSIDER_EMAIL,
                     "first_name": "Paystack Outsider",
                     "send_welcome_email": 0,
-                    "roles": [{"role": "Blogger"}],
+                    "roles": [{"role": UNPRIVILEGED_ROLE}],
                 }
             )
             user.flags.ignore_permissions = True

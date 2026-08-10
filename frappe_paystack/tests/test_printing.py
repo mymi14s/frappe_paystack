@@ -7,6 +7,7 @@ from frappe.utils import add_to_date, now_datetime, random_string
 
 from frappe_paystack.api import payment_link_qr
 from frappe_paystack.tests.factories import (
+    UNPRIVILEGED_ROLE,
     GatewaySettingFactory,
     PaymentLogFactory,
     SalesInvoiceFactory,
@@ -205,7 +206,7 @@ class TestPaymentLinkQrEndpoint(PrintingTestCase):
                 "first_name": "Paystack QR",
                 "send_welcome_email": 0,
                 "user_type": "System User",
-                "roles": [{"role": "Blogger"}],
+                "roles": [{"role": UNPRIVILEGED_ROLE}],
             }
         )
         account.flags.ignore_permissions = True

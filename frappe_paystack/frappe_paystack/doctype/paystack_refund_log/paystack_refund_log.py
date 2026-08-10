@@ -6,6 +6,7 @@ from typing import Any, Optional
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from frappe.query_builder.functions import Sum
 from frappe.utils import flt, fmt_money, getdate
 
 from frappe_paystack.utils import (
@@ -251,20 +252,21 @@ def get_total_refunded(payment_log_name: str, exclude: Optional[str] = None) -> 
 
     Processed and Completed refunds count.
     """
-    filters = {
-        "payment_log": payment_log_name,
-        "status": ["in", ["Processed", "Completed"]],
-    }
+    # The aggregate is built here because version-15 and version-16 disagree on
+    # what get_all accepts in fields.
+    refund_log = frappe.qb.DocType(REFUND_LOG_DOCTYPE)
+    query = (
+        frappe.qb.from_(refund_log)
+        .select(Sum(refund_log.refund_amount))
+        .where(refund_log.payment_log == payment_log_name)
+        .where(refund_log.status.isin(["Processed", "Completed"]))
+    )
     if exclude:
-        filters["name"] = ["!=", exclude]
+        query = query.where(refund_log.name != exclude)
 
-    result = frappe.get_all(
-        "Paystack Refund Log",
-        filters=filters,
-        fields=["sum(refund_amount) as total"],
-    )[0]
+    total = query.run()[0][0]
 
-    return flt(result.total) if result.total else 0.0
+    return flt(total) if total else 0.0
 
 
 @frappe.whitelist()

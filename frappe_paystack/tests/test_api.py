@@ -36,6 +36,7 @@ from frappe_paystack.frappe_paystack.doctype.paystack_payment_log.paystack_payme
 )
 from frappe_paystack.tests.factories import (
     TEST_COMPANY,
+    UNPRIVILEGED_ROLE,
     ChargeableInvoiceFactory,
     CustomerFactory,
     GatewaySettingFactory,
@@ -1249,7 +1250,7 @@ class TestMoneyEndpointPermissions(PaystackTestCase):
 
     def test_a_user_without_the_document_cannot_raise_a_payment_link(self) -> None:
         """A user without access to the document gets a PermissionError."""
-        self.sign_in_as("Blogger")
+        self.sign_in_as(UNPRIVILEGED_ROLE)
 
         with self.assertRaises(frappe.PermissionError):
             create_payment_link("Sales Invoice", self.invoice)
@@ -1257,7 +1258,7 @@ class TestMoneyEndpointPermissions(PaystackTestCase):
     def test_a_customer_email_is_not_enumerable(self) -> None:
         """get_customer_email throws for a user without read on Customer."""
         customer = CustomerFactory.create()
-        self.sign_in_as("Blogger")
+        self.sign_in_as(UNPRIVILEGED_ROLE)
 
         with self.assertRaises(frappe.PermissionError):
             get_customer_email(customer)
@@ -1313,7 +1314,7 @@ class TestMoneyEndpointPermissions(PaystackTestCase):
 
     def test_a_user_with_no_log_access_is_told_nothing(self) -> None:
         """pos_payment_status refuses a role holding no read on the log."""
-        self.sign_in_as("Blogger")
+        self.sign_in_as(UNPRIVILEGED_ROLE)
 
         with self.assertRaises(frappe.PermissionError):
             pos_payment_status(self.payment_log)

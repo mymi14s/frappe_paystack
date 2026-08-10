@@ -121,6 +121,8 @@ PAYABLE_STATUSES = [
     "To Deliver and Bill",
     "To Bill",
     "To Deliver",
+    # version-16 raises an unpaid Sales Order here.
+    "To Pay",
     # Dunning
     "Unresolved",
 ]

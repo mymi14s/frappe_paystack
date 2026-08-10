@@ -9,6 +9,7 @@ from frappe.utils import add_days, today
 from frappe_paystack import hooks
 from frappe_paystack.tests.factories import (
     TEST_COMPANY,
+    UNPRIVILEGED_ROLE,
     GatewaySettingFactory,
     PaymentLogFactory,
     cleanup_user,
@@ -596,7 +597,7 @@ class TestReconciliationPermissions(PaystackReconciliationTestCase):
                     "first_name": "Paystack",
                     "last_name": "Nobody",
                     "send_welcome_email": 0,
-                    "roles": [{"role": "Blogger"}],
+                    "roles": [{"role": UNPRIVILEGED_ROLE}],
                 }
             )
             user.flags.ignore_permissions = True

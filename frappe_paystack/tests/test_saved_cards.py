@@ -12,6 +12,7 @@ from frappe_paystack.frappe_paystack.doctype.paystack_customer_authorization imp
 )
 from frappe_paystack.tests.factories import (
     TEST_COMPANY,
+    UNPRIVILEGED_ROLE,
     ChargeableInvoiceFactory,
     CustomerAuthorizationFactory,
     CustomerFactory,
@@ -381,7 +382,7 @@ class TestSavedCardsEndpoint(SavedCardTestCase):
                 "first_name": "Paystack Cards",
                 "send_welcome_email": 0,
                 "user_type": "System User",
-                "roles": [{"role": "Blogger"}],
+                "roles": [{"role": UNPRIVILEGED_ROLE}],
             }
         )
         account.flags.ignore_permissions = True

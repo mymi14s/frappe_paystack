@@ -1,5 +1,6 @@
 """API endpoints for payment reconciliation."""
 
+from collections import Counter
 from typing import Optional
 
 import frappe
@@ -155,14 +156,15 @@ def get_reconciliation_stats(days: int = 30) -> dict:
 
     filters = {"reconciliation_date": [">=", add_days(today(), -cint(days or 30))]}
 
-    stats = frappe.get_all(
+    rows = frappe.get_all(
         RECONCILIATION_LOG,
         filters=apply_company_filter(filters),
-        fields=["status", "count(name) as count"],
-        group_by="status",
+        fields=["status"],
     )
 
-    result = {row.status: row.count for row in stats}
+    # Counted here because version-15 and version-16 disagree on what get_all
+    # accepts in fields.
+    result = dict(Counter(row.status for row in rows))
     result["total"] = sum(result.values())
 
     return result

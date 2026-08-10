@@ -175,11 +175,17 @@ class TestPaystackControllerInterface(PaystackTestCase):
         with self.assertRaises(frappe.ValidationError):
             setting.validate_transaction_currency("EUR")
 
-    def test_on_payment_request_submission_returns_true(self):
-        """on_payment_request_submission returns True to let the Payment Request proceed."""
+    def test_on_payment_request_submission_admits_a_supported_currency(self):
+        """on_payment_request_submission returns True for a currency Paystack charges."""
         setting = frappe.get_doc("Paystack Gateway Setting", self.gateway_name)
-        result = setting.on_payment_request_submission(None)
-        self.assertTrue(result)
+        request = frappe._dict(currency=setting.supported_currencies[0])
+        self.assertTrue(setting.on_payment_request_submission(request))
+
+    def test_on_payment_request_submission_refuses_an_unsupported_currency(self):
+        """on_payment_request_submission returns False for a currency Paystack cannot charge."""
+        setting = frappe.get_doc("Paystack Gateway Setting", self.gateway_name)
+        request = frappe._dict(currency="EUR")
+        self.assertFalse(setting.on_payment_request_submission(request))
 
     @patch(VALIDATE_PAYMENT_PATCH)
     def test_get_payment_url_creates_payment_log(self, mock_vp):

@@ -19,6 +19,7 @@ from frappe_paystack.setup import (
     setup_pos_payment_mode,
 )
 from frappe_paystack.tests.factories import (
+    UNPRIVILEGED_ROLE,
     GatewaySettingFactory,
     PaymentLogFactory,
     POSInvoiceFactory,
@@ -635,7 +636,7 @@ class TestSendPosPaymentLinkPermission(PosInvoiceTestCase):
                     "first_name": "Paystack Till Outsider",
                     "send_welcome_email": 0,
                     "user_type": "System User",
-                    "roles": [{"role": "Blogger"}],
+                    "roles": [{"role": UNPRIVILEGED_ROLE}],
                 }
             )
             user.flags.ignore_permissions = True

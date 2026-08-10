@@ -213,8 +213,12 @@ class PaystackGatewaySetting(Document):
         return get_url(f"/paystack-checkout/{log.name}")
 
     def on_payment_request_submission(self, payment_request: Any) -> bool:
-        """Let a submitted Payment Request proceed."""
-        return True
+        """
+        Report whether Paystack can collect this Payment Request.
+
+        ERPNext skips the checkout URL and the payment email when this is false.
+        """
+        return payment_request.currency in self.supported_currencies
 
     def request_for_payment(self, **kwargs) -> None:
         """

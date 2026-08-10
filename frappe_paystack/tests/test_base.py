@@ -1,10 +1,16 @@
 """Base test class with database snapshotting and teardown."""
 
 import frappe
-from frappe.tests.utils import FrappeTestCase
 from frappe.utils import flt, now
 
 from frappe_paystack.tests.factories import SuspenseAccountFactory, cleanup_user
+
+# version-16 keeps FrappeTestCase as a plain unittest.TestCase, which its runner
+# files under "unspecified-category" and skips the integration setup for.
+if int(frappe.__version__.split(".")[0]) < 16:
+    from frappe.tests.utils import FrappeTestCase as BaseTestCase
+else:
+    from frappe.tests import IntegrationTestCase as BaseTestCase
 
 TEST_COMPANY = "_Test Company"
 
@@ -89,7 +95,7 @@ def marked_translation(text: str) -> str:
     return f"[{text}]"
 
 
-class PaystackTestCase(FrappeTestCase):
+class PaystackTestCase(BaseTestCase):
     """Base test class for frappe_paystack with enhanced teardown capabilities."""
 
     # Side-effect tables purged by diffing against a setUp snapshot.
@@ -380,7 +386,7 @@ class PaystackTestCase(FrappeTestCase):
 
         self.created_docs.clear()
         self.cleanup_transient_rows()
-        # Holds the deletions through FrappeTestCase's class-teardown rollback.
+        # Holds the deletions through the base class's class-teardown rollback.
         frappe.db.commit()
 
     def cleanup_transient_rows(self) -> None:

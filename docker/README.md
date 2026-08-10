@@ -69,6 +69,10 @@ findings that predate the branch.
 resolves them by service name, so the generated bench config is repointed at `mariadb`,
 `redis-cache` and `redis-queue`.
 
+**The site is rebuilt, not reused.** GitHub starts each run on an empty database. The
+compose volume keeps the last run's site, so the server jobs pass `--force` to `bench
+new-site` and drop it.
+
 **The Cypress leg is not included.** The UI tests need a browser and a running bench.
 Run them against a local bench instead.
 

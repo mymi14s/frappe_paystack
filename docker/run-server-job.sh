@@ -90,7 +90,8 @@ if [ "${FOUND}" != "${COVERAGE_VERSION}" ]; then
 fi
 
 step "Create site"
-NEW_SITE_ARGS=(--db-root-password root --admin-password admin)
+# GitHub starts on an empty database; the compose volume keeps the last run's site.
+NEW_SITE_ARGS=(--force --db-root-password root --admin-password admin)
 # The site user is created for the container's address, not localhost.
 if bench new-site --help 2>&1 | grep -q -- "--mariadb-user-host-login-scope"; then
 	NEW_SITE_ARGS+=(--mariadb-user-host-login-scope='%')

@@ -12,6 +12,10 @@ from frappe.utils import add_days, flt, getdate, random_string, today
 
 from frappe_paystack.setup import ensure_mode_of_payment as setup_ensure_mode_of_payment
 
+# A desk role carrying no Paystack or accounting permission. version-16 dropped
+# frappe's Blogger role, so the permission tests own this one.
+UNPRIVILEGED_ROLE = "_Test Paystack Unprivileged"
+
 TEST_COMPANY = "_Test Company"
 TEST_CUSTOMER = "_Test Customer"
 TEST_ITEM = "_Test Item Home Products 100"
@@ -31,6 +35,18 @@ VALIDATE_PAYMENT_PATCH_TARGET = (
 
 
 ensure_mode_of_payment = setup_ensure_mode_of_payment
+
+
+def ensure_unprivileged_role() -> str:
+    """Create the role the permission tests sign in as."""
+    if not frappe.db.exists("Role", UNPRIVILEGED_ROLE):
+        role = frappe.new_doc("Role")
+        role.role_name = UNPRIVILEGED_ROLE
+        role.desk_access = 1
+        role.flags.ignore_permissions = True
+        role.insert()
+
+    return UNPRIVILEGED_ROLE
 
 
 def cleanup_linked_payment_entries(reference_doctype: str, reference_docname: str) -> None:
