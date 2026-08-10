@@ -4,11 +4,11 @@ setup_pos_fixtures raises the POS till, setup_shop_fixtures the Webshop
 storefront. Each returns a "restore" its teardown puts back.
 """
 
-from typing import Optional
+from typing import Callable, Optional
 
 import frappe
 from frappe.installer import update_site_config
-from frappe.tests.ui_test_helpers import whitelist_for_tests
+from frappe.tests.ui_test_helpers import whitelist_for_tests as frappe_whitelist_for_tests
 from frappe.utils import add_to_date, cint, flt, now_datetime, nowdate
 
 from frappe_paystack.setup import MODE_OF_PAYMENT, create_payment_gateway_account, setup_pos_payment_mode
@@ -37,6 +37,16 @@ PRICE_LIST = "_Test Paystack POS Price List"
 POS_PROFILE = "_Test Paystack POS Profile"
 GATEWAY = "_Test Paystack POS Gateway"
 CASH_MODE = "Cash"
+
+# version-16 turned whitelist_for_tests into a decorator factory.
+FRAPPE_MAJOR_VERSION = int(frappe.__version__.split(".")[0])
+
+
+def whitelist_for_tests(fn: Callable) -> Callable:
+    """Whitelist a test endpoint on either frappe branch."""
+    if FRAPPE_MAJOR_VERSION < 16:
+        return frappe_whitelist_for_tests(fn)
+    return frappe_whitelist_for_tests()(fn)
 
 
 @whitelist_for_tests

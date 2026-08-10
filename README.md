@@ -464,6 +464,22 @@ cd sites
 
 Branch coverage is on and the report fails under 100%.
 
+### Continuous integration locally
+
+`docker/docker-compose.yml` runs the GitHub Actions jobs on your machine, against your working
+tree, without touching any bench on the host.
+
+```bash
+cd apps/frappe_paystack
+docker compose -f docker/docker-compose.yml run --rm quality      # lint and types
+docker compose -f docker/docker-compose.yml run --rm security     # semgrep and pip-audit
+docker compose -f docker/docker-compose.yml run --rm server-v15   # Python 3.12, frappe version-15
+docker compose -f docker/docker-compose.yml run --rm server-v16   # Python 3.14, frappe version-16
+```
+
+See [docker/README.md](docker/README.md) for what each service covers and where it differs from
+GitHub.
+
 ## Troubleshooting
 
 | Symptom | Where to look |

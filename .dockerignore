@@ -1,0 +1,5 @@
+*
+!docker/lib-checkout.sh
+!docker/run-server-job.sh
+!docker/run-quality-job.sh
+!docker/run-security-job.sh
