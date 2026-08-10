@@ -15,7 +15,6 @@ from werkzeug.wrappers import Request
 
 from frappe_paystack.api import (
     HOSTED_CHECKOUT_LIMIT,
-    HOSTED_CHECKOUT_WINDOW,
     checkout_reference,
     create_payment_link,
     get_payable_amount,
@@ -36,7 +35,6 @@ from frappe_paystack.frappe_paystack.doctype.paystack_payment_log.paystack_payme
     create_payment_entry_from_log,
 )
 from frappe_paystack.tests.factories import (
-    FRAPPE_MAJOR_VERSION,
     TEST_COMPANY,
     UNPRIVILEGED_ROLE,
     ChargeableInvoiceFactory,
@@ -616,7 +614,7 @@ class TestPaymentLinkCurrency(PaystackTestCase):
         self.addCleanup(GatewaySettingFactory.cleanup, self.gateway_name)
 
     def company_currency_invoice(self) -> str:
-        """Raise a submitted invoice in USD, which Paystack cannot charge."""
+        """Raise a submitted invoice in INR, which Paystack cannot charge."""
         invoice = SalesInvoiceFactory.create(rate=1000)
         self.addCleanup(SalesInvoiceFactory.cleanup, invoice)
         return invoice
@@ -1691,15 +1689,9 @@ class TestHostedCheckoutRateLimit(HostedCheckoutRequestTestCase):
         self.addCleanup(frappe.cache.delete, self.counter_key())
         frappe.cache.delete(self.counter_key())
 
-    def counter_key(self) -> bytes:
+    def counter_key(self) -> str:
         """Return the redis key frappe's rate limiter counts this caller in."""
-        key = frappe.cache.make_key(f"rl:{frappe.form_dict.cmd}:{CHECKOUT_CALLER_IP}")
-
-        # version-16 counts each window in a key of its own.
-        if FRAPPE_MAJOR_VERSION >= 16:
-            key += f":{HOSTED_CHECKOUT_WINDOW}".encode()
-
-        return key
+        return frappe.cache.make_key(f"rl:{frappe.form_dict.cmd}:{CHECKOUT_CALLER_IP}")
 
     def open_checkout(self) -> str:
         """Call the endpoint against a log whose checkout is already open."""

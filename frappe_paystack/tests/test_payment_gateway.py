@@ -31,7 +31,7 @@ VALIDATE_PAYMENT_PATCH = (
 )
 
 # Currencies the acceptance check is offered, supported ones first.
-PROBE_CURRENCIES = SUPPORTED_CURRENCIES + ["EUR", "GBP", "JPY"]
+PROBE_CURRENCIES = SUPPORTED_CURRENCIES + ["EUR", "GBP", "JPY", "INR"]
 
 ERROR_LOG = "Error Log"
 

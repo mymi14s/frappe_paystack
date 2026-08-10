@@ -65,7 +65,7 @@ class DunningTestCase(PaystackTestCase):
             linked_doctype="Dunning",
             linked_docname=self.dunning,
             amount=amount,
-            currency="USD",
+            currency="INR",
         )
         self.addCleanup(PaymentLogFactory.cleanup, log_name)
 
@@ -75,7 +75,7 @@ class DunningTestCase(PaystackTestCase):
             {
                 "status": "Processed",
                 "amount_paid": amount,
-                "currency_paid": "USD",
+                "currency_paid": "INR",
                 "payment_reference": f"ref-{log_name}",
                 "payment_date": frappe.utils.today(),
             },
@@ -268,5 +268,5 @@ class TestDunningSettlement(DunningTestCase):
                 linked_doctype="Dunning",
                 linked_docname=self.dunning,
                 amount=10,
-                currency="USD",
+                currency="INR",
             )

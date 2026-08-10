@@ -12,16 +12,11 @@ from frappe.utils import add_days, flt, getdate, random_string, today
 
 from frappe_paystack.setup import ensure_mode_of_payment as setup_ensure_mode_of_payment
 
-FRAPPE_MAJOR_VERSION = int(frappe.__version__.split(".")[0])
-
 # A desk role carrying no Paystack or accounting permission. version-16 dropped
 # frappe's Blogger role, so the permission tests own this one.
 UNPRIVILEGED_ROLE = "_Test Paystack Unprivileged"
 
 TEST_COMPANY = "_Test Company"
-
-# Paystack cannot charge USD, so the suite bills the test company in this.
-COMPANY_CURRENCY = "USD"
 TEST_CUSTOMER = "_Test Customer"
 TEST_ITEM = "_Test Item Home Products 100"
 
@@ -618,9 +613,7 @@ class SalesInvoiceFactory:
                 "posting_date": raised_on,
                 # Holds posting_date at the value set above.
                 "set_posting_time": 1,
-                "currency": currency
-                or frappe.db.get_value("Company", company, "default_currency")
-                or COMPANY_CURRENCY,
+                "currency": currency or frappe.db.get_value("Company", company, "default_currency") or "INR",
                 "items": [
                     {
                         "item_code": item,
@@ -655,10 +648,9 @@ class SalesInvoiceFactory:
 class ChargeableInvoiceFactory:
     """Factory for Sales Invoices in a currency Paystack can charge, billed to their own customer."""
 
-    CURRENCY = COMPANY_CURRENCY
-    # The company's own receivable, which the invoice currency now matches.
-    RECEIVABLE = None
-    CONVERSION_RATE = 1.0
+    CURRENCY = "USD"
+    RECEIVABLE = "_Test Receivable USD - _TC"
+    CONVERSION_RATE = 60.0
 
     # The customer each invoice was billed to, read by cleanup().
     billed = {}
@@ -934,7 +926,7 @@ class SalesOrderFactory:
                 "order_type": order_type,
                 "delivery_date": today(),
                 "transaction_date": today(),
-                "currency": frappe.db.get_value("Company", company, "default_currency") or COMPANY_CURRENCY,
+                "currency": frappe.db.get_value("Company", company, "default_currency") or "INR",
                 "selling_price_list": SELLING_PRICE_LIST,
                 "items": [
                     {
@@ -992,9 +984,7 @@ class CreditNoteFactory:
                 "posting_date": today(),
                 "is_return": 1,
                 "return_against": return_against,
-                "currency": currency
-                or frappe.db.get_value("Company", company, "default_currency")
-                or COMPANY_CURRENCY,
+                "currency": currency or frappe.db.get_value("Company", company, "default_currency") or "INR",
                 "items": [
                     {
                         "item_code": item,

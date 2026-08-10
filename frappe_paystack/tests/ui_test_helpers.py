@@ -167,7 +167,7 @@ def ensure_company() -> str:
             "doctype": "Company",
             "company_name": COMPANY,
             "abbr": "_TC",
-            "default_currency": frappe.db.get_single_value("System Settings", "currency") or "USD",
+            "default_currency": frappe.db.get_single_value("System Settings", "currency") or "INR",
             "country": frappe.db.get_single_value("System Settings", "country") or "India",
         }
     )
