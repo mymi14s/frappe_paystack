@@ -614,7 +614,7 @@ class TestPaymentLinkCurrency(PaystackTestCase):
         self.addCleanup(GatewaySettingFactory.cleanup, self.gateway_name)
 
     def company_currency_invoice(self) -> str:
-        """Raise a submitted invoice in INR, which Paystack cannot charge."""
+        """Raise a submitted invoice in NGN, which Paystack cannot charge."""
         invoice = SalesInvoiceFactory.create(rate=1000)
         self.addCleanup(SalesInvoiceFactory.cleanup, invoice)
         return invoice

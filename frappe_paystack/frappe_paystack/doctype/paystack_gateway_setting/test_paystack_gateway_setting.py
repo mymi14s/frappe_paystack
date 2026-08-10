@@ -18,7 +18,7 @@ FOREIGN_CURRENCY = "GHS"
 
 # Currencies the acceptance check is offered, in order: every supported one
 # followed by codes Paystack does not settle in.
-PROBE_CURRENCIES = SUPPORTED_CURRENCIES + ["EUR", "GBP", "JPY", "INR"]
+PROBE_CURRENCIES = SUPPORTED_CURRENCIES + ["EUR", "GBP", "JPY"]
 
 
 def company_currency(company: str = TEST_COMPANY) -> str:

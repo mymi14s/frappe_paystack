@@ -1,4 +1,4 @@
-"""Paystack payments against foreign-currency documents: an INR company billing in USD."""
+"""Paystack payments against foreign-currency documents: an NGN company billing in USD."""
 
 from unittest.mock import MagicMock, patch
 
@@ -26,7 +26,7 @@ from frappe_paystack.utils import outstanding_rate, party_account_for, party_acc
 from erpnext.setup.utils import get_exchange_rate
 
 TEST_COMPANY = "_Test Company"
-COMPANY_CURRENCY = "INR"
+COMPANY_CURRENCY = "NGN"
 FOREIGN_CURRENCY = "USD"
 USD_RECEIVABLE = "_Test Receivable USD - _TC"
 CONVERSION_RATE = 60.0
@@ -74,7 +74,7 @@ class MultiCurrencyTestCase(PaystackTestCase):
         self.addCleanup(GatewaySettingFactory.cleanup, self.gateway_name)
 
     def make_usd_invoice(self, rate: float = 100) -> str:
-        """Raise a submitted USD invoice against an INR company."""
+        """Raise a submitted USD invoice against an NGN company."""
         invoice = SalesInvoiceFactory.create(
             rate=rate,
             customer=CustomerFactory.create(customer_name=FOREIGN_CUSTOMER),
@@ -120,7 +120,7 @@ class MultiCurrencyTestCase(PaystackTestCase):
 
 
 class TestForeignCurrencyInvoice(MultiCurrencyTestCase):
-    """A USD invoice raised against an INR company."""
+    """A USD invoice raised against an NGN company."""
 
     def test_invoice_is_raised_in_foreign_currency(self) -> None:
         """The fixture invoice is raised in USD at the conversion rate."""
@@ -130,7 +130,7 @@ class TestForeignCurrencyInvoice(MultiCurrencyTestCase):
         self.assertEqual(doc.currency, FOREIGN_CURRENCY)
         self.assertNotEqual(doc.currency, COMPANY_CURRENCY)
         self.assertAlmostEqual(flt(doc.conversion_rate), CONVERSION_RATE, places=2)
-        # grand_total is in USD; base_grand_total in INR.
+        # grand_total is in USD; base_grand_total in NGN.
         self.assertAlmostEqual(flt(doc.grand_total), 100.0, places=2)
         self.assertAlmostEqual(flt(doc.base_grand_total), 6000.0, places=2)
 
@@ -225,7 +225,7 @@ class TestForeignCurrencyPaymentEntry(MultiCurrencyTestCase):
         )
 
     def test_gl_entries_balance_in_company_currency(self) -> None:
-        """The posted GL is balanced in INR."""
+        """The posted GL is balanced in NGN."""
         invoice = self.make_usd_invoice(rate=100)
         log_name = self.pay(invoice, 100)
 
@@ -274,7 +274,7 @@ class ForeignCurrencyRefundTestCase(MultiCurrencyTestCase):
         return refund
 
     def assert_reversal_ledger(self, reversal: str, base_amount: float) -> None:
-        """Assert the reversal debits the receivable and credits suspense in INR."""
+        """Assert the reversal debits the receivable and credits suspense in NGN."""
         rows = self.gl_entries_by_account(reversal)
 
         self.assertIn(self.receivable, rows)
@@ -311,7 +311,7 @@ class TestForeignCurrencyManualRefund(ForeignCurrencyRefundTestCase):
         self.assertEqual(refund.currency, CHARGE_CURRENCY)
 
     def test_reversal_is_booked_in_the_invoice_currency(self) -> None:
-        """6000 INR came in; 100 USD is what leaves the receivable."""
+        """6000 NGN came in; 100 USD is what leaves the receivable."""
         refund = self.refund_log_of(self.initiate(6000.0))
         pe = frappe.get_doc("Payment Entry", refund.reversal_payment_entry)
 
@@ -368,7 +368,7 @@ class TestForeignCurrencyAutoRefund(ForeignCurrencyRefundTestCase):
         return self.refund_log_of(names[0])
 
     def test_paystack_is_asked_for_the_charge_currency_amount(self) -> None:
-        """A 100 USD credit note asks Paystack to return 6000 INR."""
+        """A 100 USD credit note asks Paystack to return 6000 NGN."""
         _note, refund_call = self.credit_note(rate=100)
 
         self.assertAlmostEqual(flt(refund_call.call_args.kwargs["amount"]), 6000.0, places=2)
@@ -436,7 +436,7 @@ class TestCompanyCurrencyReceivable(CompanyCurrencyReceivableTestCase):
     """Settling a foreign invoice whose receivable is in the company currency."""
 
     def test_the_receivable_is_kept_in_the_company_currency(self) -> None:
-        """The fixture invoice is in USD while its receivable is in INR."""
+        """The fixture invoice is in USD while its receivable is in NGN."""
         doc = frappe.get_doc("Sales Invoice", self.make_invoice())
 
         self.assertEqual(doc.currency, FOREIGN_CURRENCY)
@@ -449,7 +449,7 @@ class TestCompanyCurrencyReceivable(CompanyCurrencyReceivableTestCase):
         self.assertAlmostEqual(flt(doc.outstanding_amount), 6000.0, places=2)
 
     def test_the_allocation_is_the_whole_receivable(self) -> None:
-        """6000 INR captured is allocated as 6000 INR of receivable."""
+        """6000 NGN captured is allocated as 6000 NGN of receivable."""
         invoice = self.make_invoice()
         log_name = self.pay(invoice, 100)
 

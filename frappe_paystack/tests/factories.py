@@ -613,7 +613,7 @@ class SalesInvoiceFactory:
                 "posting_date": raised_on,
                 # Holds posting_date at the value set above.
                 "set_posting_time": 1,
-                "currency": currency or frappe.db.get_value("Company", company, "default_currency") or "INR",
+                "currency": currency or frappe.db.get_value("Company", company, "default_currency") or "NGN",
                 "items": [
                     {
                         "item_code": item,
@@ -926,7 +926,7 @@ class SalesOrderFactory:
                 "order_type": order_type,
                 "delivery_date": today(),
                 "transaction_date": today(),
-                "currency": frappe.db.get_value("Company", company, "default_currency") or "INR",
+                "currency": frappe.db.get_value("Company", company, "default_currency") or "NGN",
                 "selling_price_list": SELLING_PRICE_LIST,
                 "items": [
                     {
@@ -984,7 +984,7 @@ class CreditNoteFactory:
                 "posting_date": today(),
                 "is_return": 1,
                 "return_against": return_against,
-                "currency": currency or frappe.db.get_value("Company", company, "default_currency") or "INR",
+                "currency": currency or frappe.db.get_value("Company", company, "default_currency") or "NGN",
                 "items": [
                     {
                         "item_code": item,
