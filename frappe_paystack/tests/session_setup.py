@@ -18,11 +18,7 @@ FRAPPE_MAJOR_VERSION = int(frappe.__version__.split(".")[0])
 
 # Paystack charges this, so the test company is billed in it.
 COMPANY_CURRENCY = "NGN"
-TEST_COMPANY_ABBR = "_TC"
-TEST_COMPANY_COUNTRY = "Nigeria"
 
-# Warehouse types ERPNext links the default warehouse tree to.
-WAREHOUSE_TYPES = ("Transit",)
 
 # The company frappe's test-record machinery raises _Test Company against.
 SETUP_WIZARD_ARGS = {
@@ -73,37 +69,21 @@ def raise_erpnext_baseline() -> None:
     bootstrap_erpnext_test_data()
 
 
-def raise_test_company() -> None:
+def bill_the_test_company_in_a_paystack_currency() -> None:
     """
-    Create the test company in a currency Paystack charges.
+    Put the test company in a currency Paystack charges.
 
-    The ERPNext fixtures raise it in a currency Paystack refuses. Creating it
-    first leaves their generators nothing to make, so the currency stands.
+    The ERPNext fixtures raise it in one Paystack refuses, so every document
+    billed against it would be uncollectable.
     """
-    if frappe.db.exists("Company", TEST_COMPANY):
-        return
-
-    # A new company raises its warehouse tree, which links to these.
-    for warehouse_type in WAREHOUSE_TYPES:
-        if not frappe.db.exists("Warehouse Type", warehouse_type):
-            frappe.get_doc({"doctype": "Warehouse Type", "name": warehouse_type}).insert(
-                ignore_permissions=True
-            )
-
-    company = frappe.new_doc("Company")
-    company.company_name = TEST_COMPANY
-    company.abbr = TEST_COMPANY_ABBR
-    company.default_currency = COMPANY_CURRENCY
-    company.country = TEST_COMPANY_COUNTRY
-    company.flags.ignore_permissions = True
-    company.insert()
+    frappe.db.set_value("Company", TEST_COMPANY, "default_currency", COMPANY_CURRENCY)
 
 
 def before_tests() -> None:
     """Prepare the site for a frappe_paystack test session."""
     frappe.clear_cache()
-    raise_test_company()
     raise_erpnext_baseline()
+    bill_the_test_company_in_a_paystack_currency()
     ensure_unprivileged_role()
     _enable_all_roles_for_admin()
     set_defaults_for_tests()
