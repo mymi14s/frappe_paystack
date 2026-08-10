@@ -650,11 +650,9 @@ class SalesInvoiceFactory:
 class ChargeableInvoiceFactory:
     """Factory for Sales Invoices in a currency Paystack can charge, billed to their own customer."""
 
-    # The company's own currency, so the invoice needs no foreign receivable and
-    # the customer never holds entries in two currencies.
-    CURRENCY = None
-    RECEIVABLE = None
-    CONVERSION_RATE = None
+    CURRENCY = "USD"
+    RECEIVABLE = "_Test Receivable USD - _TC"
+    CONVERSION_RATE = 60.0
 
     # The customer each invoice was billed to, read by cleanup().
     billed = {}
