@@ -48,7 +48,7 @@ UTILS_POST = "frappe_paystack.utils.utils.requests.post"
 UTILS_REQUEST_LOG = "frappe_paystack.utils.utils.create_request_log"
 
 # Every supported currency followed by codes Paystack does not settle in.
-PROBE_CURRENCIES = SUPPORTED_CURRENCIES + ["EUR", "GBP", "JPY", "INR"]
+PROBE_CURRENCIES = SUPPORTED_CURRENCIES + ["EUR", "GBP", "JPY"]
 
 
 def is_accepted_currency(currency: str) -> bool:

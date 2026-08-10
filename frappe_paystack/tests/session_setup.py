@@ -10,7 +10,7 @@ import frappe
 from frappe.desk.page.setup_wizard.setup_wizard import setup_complete
 from frappe.utils.data import now_datetime
 
-from frappe_paystack.tests.factories import ensure_unprivileged_role
+from frappe_paystack.tests.factories import COMPANY_CURRENCY, TEST_COMPANY, ensure_unprivileged_role
 
 from erpnext.setup.utils import _enable_all_roles_for_admin, set_defaults_for_tests
 
@@ -65,10 +65,21 @@ def raise_erpnext_baseline() -> None:
     bootstrap_erpnext_test_data()
 
 
+def bill_the_test_company_in_a_paystack_currency() -> None:
+    """
+    Put the test company in a currency Paystack charges.
+
+    The ERPNext fixtures raise it in INR, which Paystack refuses, so every
+    document billed against it would be uncollectable.
+    """
+    frappe.db.set_value("Company", TEST_COMPANY, "default_currency", COMPANY_CURRENCY)
+
+
 def before_tests() -> None:
     """Prepare the site for a frappe_paystack test session."""
     frappe.clear_cache()
     raise_erpnext_baseline()
+    bill_the_test_company_in_a_paystack_currency()
     ensure_unprivileged_role()
     _enable_all_roles_for_admin()
     set_defaults_for_tests()
