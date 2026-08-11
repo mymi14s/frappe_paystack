@@ -366,6 +366,7 @@ jobs:
       # Runs the cypress in package.json against cypress.config.js in this checkout.
       - name: Install Cypress
         if: ${{ matrix.ui }}
+        working-directory: /home/runner/frappe-bench/apps/frappe_paystack
         run: |
           npm ci
           npx cypress install
@@ -375,6 +376,7 @@ jobs:
 
       - name: Run UI Tests
         if: ${{ matrix.ui }}
+        working-directory: /home/runner/frappe-bench/apps/frappe_paystack
         run: npx cypress run --browser chrome
         env:
           CYPRESS_baseUrl: http://localhost:8000
