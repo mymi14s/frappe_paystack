@@ -91,7 +91,6 @@ fi
 
 step "Create site"
 # GitHub starts on an empty database; the compose volume keeps the last run's site.
-# --set-default because bench serve reads the site off the Host header.
 NEW_SITE_ARGS=(--force --set-default --db-root-password root --admin-password admin)
 # The site user is created for the container's address, not localhost.
 if bench new-site --help 2>&1 | grep -q -- "--mariadb-user-host-login-scope"; then
@@ -106,7 +105,6 @@ bench --site "${SITE}" install-app frappe_paystack
 bench --site "${SITE}" set-config allow_tests true
 bench build
 
-# SKIP_TESTS=1 reaches the steps below without paying for the whole suite.
 if [ "${SKIP_TESTS:-0}" != "1" ]; then
 	step "Run Tests"
 	bash "${BENCH_DIR}/apps/frappe_paystack/.github/scripts/run-tests-with-coverage.sh" \
@@ -115,7 +113,6 @@ else
 	step "Run Tests (skipped)"
 fi
 
-# Mirrors matrix.ui in the workflow: the leg that drives the Cypress specs.
 if [ "${RUN_UI:-0}" != "1" ]; then
 	exit 0
 fi

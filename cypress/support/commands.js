@@ -226,11 +226,22 @@ Cypress.Commands.add("checkout_payload", () => {
 // assertion retries. Every caller asserts on a row it expects to be there.
 Cypress.Commands.add("unsettled_report", (company) => {
 	cy.visit("/app/query-report/Paystack Unsettled Payments");
-	cy.get(".datatable", { timeout: 90000 }).should("exist");
 
-	cy.window().then((win) => {
-		win.frappe.query_report.set_filter_value("company", company);
-	});
+	cy.window({ timeout: 90000 })
+		.should((win) => {
+			expect(
+				win.frappe &&
+					win.frappe.query_report &&
+					win.frappe.query_report.get_filter &&
+					win.frappe.query_report.get_filter("company"),
+				"company filter is built"
+			).to.exist;
+		})
+		.then((win) => {
+			win.frappe.query_report.set_filter_value("company", company);
+		});
+
+	cy.get(".datatable", { timeout: 90000 }).should("exist");
 
 	return cy.get(".datatable .dt-scrollable", { timeout: 90000 });
 });

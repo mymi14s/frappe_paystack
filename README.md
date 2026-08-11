@@ -12,15 +12,21 @@ the POS screen and the invoice print format.
 
 ## Features
 
-- Checkout page with an inline Paystack popup or a hosted redirect.
-- **Pay now**, **Email payment link** and **Partial payment** buttons on Sales Invoice,
-  Sales Order and Dunning.
-- Webshop cart and customer portal checkout.
-- POS collection by emailed link or Phone channel.
-- Charging cards a customer has already used.
-- Automatic collection of ERPNext Subscription invoices.
-- QR codes and a payment link print format for Sales Invoice.
-- Automatic booking of Payment Entries, refund reversals and settlement Journal Entries.
+- Take payment for a Sales Invoice, Sales Order, POS Invoice or Dunning, in full or in part.
+- Send the customer a checkout link by email, or print it on the invoice as a QR code they scan
+  to pay.
+- Pay in a Paystack popup over your own page, or on a hosted Paystack page.
+- Customers shop and pay from the webshop, and a paid order is invoiced automatically.
+- Customers see their payments and refunds, and download PDF receipts, at `/my-payments`.
+- Collect at the POS by emailed link or on the Phone channel.
+- Bill a card the customer has already paid with, without asking them to check out again.
+- Collect ERPNext Subscription invoices automatically.
+- Refund in full or in part, by hand or automatically when a Credit Note is issued.
+- Record Paystack payouts against your bank, fee and suspense accounts, so what reaches your
+  account matches what is in your books.
+- Check every recent payment against Paystack daily and flag anything that disagrees.
+- A payment Paystack took but your books have not recorded is retried until it is recorded.
+- A document with a payment in progress cannot be paid a second time.
 - Five reports, a monitoring workspace and a reconciliation page.
 - Per company gateways, keys and accounts.
 
@@ -415,17 +421,11 @@ Always name the app:
 bench --site your-site run-tests --app frappe_paystack
 ```
 
-> **Never run `bench run-tests` without `--app frappe_paystack`.** `erpnext` and `payments` both
-> register a `before_tests` hook that empties the entire Item Price table with raw SQL, leaving no
-> `Deleted Document` rows. It also resets the Stock Settings and Selling Settings defaults. This
-> has already destroyed data on a real bench. Never run it bare, and never with `--app erpnext` or
-> `--app payments`, against a site whose data you care about.
+> **Never run `bench run-tests` bare, or with `--app erpnext` or `--app payments`**, against a
+> site whose data you care about. Their `before_tests` hooks delete data with raw SQL, leaving
+> nothing to recover from. This app's own hook deletes nothing.
 
-`--app frappe_paystack` resolves this app's own hook,
-`frappe_paystack.tests.session_setup.before_tests`. It deletes nothing.
-
-Two side effects are inherent to `bench run-tests` on any site: Frappe installs ERPNext's `_Test*`
-fixture records and never removes them, and the scheduler is disabled for the duration of the run.
+Frappe leaves ERPNext's `_Test*` fixture records behind, and disables the scheduler for the run.
 
 ### JavaScript tests
 

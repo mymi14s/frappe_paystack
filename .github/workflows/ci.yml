@@ -313,8 +313,6 @@ jobs:
       - name: Create site
         working-directory: /home/runner/frappe-bench
         run: |
-          # bench serve reads the site off the Host header; "localhost" matches
-          # none without a default, and every request 404s.
           bench new-site --set-default --db-root-password root --admin-password admin test_site
           bench --site test_site install-app erpnext
           bench --site test_site install-app payments
@@ -348,7 +346,6 @@ jobs:
           bench start &> bench_start.log &
           BENCH_PID=$!
 
-          # A bare timeout reports exit 124 and nothing else.
           if timeout 180 bash -c 'until curl -sf http://localhost:8000/api/method/frappe.ping > /dev/null; do sleep 2; done'; then
             exit 0
           fi
@@ -374,7 +371,7 @@ jobs:
           npx cypress install
           npx cypress verify
         env:
-          CYPRESS_INSTALL_BINARY: '1'
+          CYPRESS_INSTALL_BINARY: ''
 
       - name: Run UI Tests
         if: ${{ matrix.ui }}
@@ -382,16 +379,6 @@ jobs:
         env:
           CYPRESS_baseUrl: http://localhost:8000
           CYPRESS_adminPassword: admin
-
-      - name: Upload Cypress artifacts
-        if: ${{ matrix.ui && failure() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: cypress-artifacts-${{ matrix.frappe }}
-          path: |
-            cypress/screenshots
-            cypress/videos
-          if-no-files-found: ignore
 
       - name: Show bench output
         if: ${{ always() }}
