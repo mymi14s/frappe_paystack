@@ -4,6 +4,7 @@ import frappe
 from frappe.utils import flt, now
 
 from frappe_paystack.tests.factories import SuspenseAccountFactory, cleanup_user
+from frappe_paystack.tests.session_setup import bill_the_test_company_in_a_paystack_currency
 
 # version-16 keeps FrappeTestCase as a plain unittest.TestCase, which its runner
 # files under "unspecified-category" and skips the integration setup for.
@@ -117,6 +118,8 @@ class PaystackTestCase(BaseTestCase):
             frappe.db.get_single_value(ACCOUNTS_SETTINGS, "delete_linked_ledger_entries"),
         )
         super().setUpClass()
+        # Test records raised after before_tests bring the fixture currency back.
+        bill_the_test_company_in_a_paystack_currency()
         frappe.db.set_single_value(ACCOUNTS_SETTINGS, "delete_linked_ledger_entries", 1)
         frappe.db.commit()
 
