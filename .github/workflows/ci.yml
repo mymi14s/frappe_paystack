@@ -313,7 +313,9 @@ jobs:
       - name: Create site
         working-directory: /home/runner/frappe-bench
         run: |
-          bench new-site --db-root-password root --admin-password admin test_site
+          # bench serve reads the site off the Host header; "localhost" matches
+          # none without a default, and every request 404s.
+          bench new-site --set-default --db-root-password root --admin-password admin test_site
           bench --site test_site install-app erpnext
           bench --site test_site install-app payments
           bench --site test_site install-app webshop
@@ -344,7 +346,25 @@ jobs:
         working-directory: /home/runner/frappe-bench
         run: |
           bench start &> bench_start.log &
-          timeout 180 bash -c 'until curl -sf http://localhost:8000/api/method/frappe.ping > /dev/null; do sleep 2; done'
+          BENCH_PID=$!
+
+          # A bare timeout reports exit 124 and nothing else.
+          if timeout 180 bash -c 'until curl -sf http://localhost:8000/api/method/frappe.ping > /dev/null; do sleep 2; done'; then
+            exit 0
+          fi
+
+          echo "::error::bench start did not answer on :8000 within 180s"
+          if kill -0 "${BENCH_PID}" 2>/dev/null; then
+            echo "bench start is still running; the web process never bound the port."
+          else
+            echo "bench start exited; honcho tears every process down when one dies."
+          fi
+
+          echo "--- bench_start.log ---"
+          cat bench_start.log
+          echo "--- listening sockets ---"
+          ss -ltnp || true
+          exit 1
 
       # Runs the cypress in package.json against cypress.config.js in this checkout.
       - name: Install Cypress

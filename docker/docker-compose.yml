@@ -68,6 +68,8 @@ services:
       ERPNEXT_BRANCH: version-15
       PAYMENTS_BRANCH: version-15
       WEBSHOP_BRANCH: version-15
+      # Mirrors matrix.ui: the UI suite runs on this leg.
+      RUN_UI: '1'
     volumes:
       - ../:/workspace:ro
       - cache-v15:/home/runner/.cache

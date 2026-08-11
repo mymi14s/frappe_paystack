@@ -91,7 +91,8 @@ fi
 
 step "Create site"
 # GitHub starts on an empty database; the compose volume keeps the last run's site.
-NEW_SITE_ARGS=(--force --db-root-password root --admin-password admin)
+# --set-default because bench serve reads the site off the Host header.
+NEW_SITE_ARGS=(--force --set-default --db-root-password root --admin-password admin)
 # The site user is created for the container's address, not localhost.
 if bench new-site --help 2>&1 | grep -q -- "--mariadb-user-host-login-scope"; then
 	NEW_SITE_ARGS+=(--mariadb-user-host-login-scope='%')
@@ -105,6 +106,44 @@ bench --site "${SITE}" install-app frappe_paystack
 bench --site "${SITE}" set-config allow_tests true
 bench build
 
-step "Run Tests"
-bash "${BENCH_DIR}/apps/frappe_paystack/.github/scripts/run-tests-with-coverage.sh" \
-	"${BENCH_DIR}" "${SITE}"
+# SKIP_TESTS=1 reaches the steps below without paying for the whole suite.
+if [ "${SKIP_TESTS:-0}" != "1" ]; then
+	step "Run Tests"
+	bash "${BENCH_DIR}/apps/frappe_paystack/.github/scripts/run-tests-with-coverage.sh" \
+		"${BENCH_DIR}" "${SITE}"
+else
+	step "Run Tests (skipped)"
+fi
+
+# Mirrors matrix.ui in the workflow: the leg that drives the Cypress specs.
+if [ "${RUN_UI:-0}" != "1" ]; then
+	exit 0
+fi
+
+step "Set up the site for UI tests"
+bench --site "${SITE}" execute frappe.utils.install.complete_setup_wizard
+bench --site "${SITE}" execute frappe.utils.scheduler.disable_scheduler
+bench --site "${SITE}" execute frappe_paystack.tests.ui_test_helpers.create_pos_test_user
+
+step "Start the bench"
+bench start &> bench_start.log &
+BENCH_PID=$!
+
+if timeout 180 bash -c 'until curl -sf http://localhost:8000/api/method/frappe.ping > /dev/null; do sleep 2; done'; then
+	echo "bench start answered on :8000"
+	kill "${BENCH_PID}" 2>/dev/null || true
+	exit 0
+fi
+
+echo "bench start did not answer on :8000 within 180s"
+if kill -0 "${BENCH_PID}" 2>/dev/null; then
+	echo "bench start is still running; the web process never bound the port."
+else
+	echo "bench start exited; honcho tears every process down when one dies."
+fi
+
+echo "--- Procfile ---"
+cat Procfile
+echo "--- bench_start.log ---"
+cat bench_start.log
+exit 1
