@@ -76,23 +76,31 @@ def bill_the_test_company_in_a_paystack_currency() -> None:
     The fixtures pin account_currency, so the accounts do not follow the company
     on their own. Written straight to the table because the controllers refuse a
     currency change, and no entry has been posted yet.
+
+    Only what the fixtures raised in the old base currency moves. The accounts,
+    price lists and customers the fixtures deliberately hold in a foreign
+    currency stay foreign, because that is what the multi-currency tests bill.
     """
+    base_currency = frappe.db.get_value("Company", TEST_COMPANY, "default_currency")
+    if not base_currency or base_currency == COMPANY_CURRENCY:
+        return
+
     frappe.db.set_value("Company", TEST_COMPANY, "default_currency", COMPANY_CURRENCY)
     frappe.db.set_value("Company", TEST_COMPANY, "country", COMPANY_COUNTRY)
 
     for account in frappe.get_all(
         "Account",
-        filters={"company": TEST_COMPANY, "is_group": 0},
+        filters={"company": TEST_COMPANY, "is_group": 0, "account_currency": base_currency},
         pluck="name",
     ):
         frappe.db.set_value("Account", account, "account_currency", COMPANY_CURRENCY)
 
     # Selling documents read the rate from the price list, so it is moved too.
-    for price_list in frappe.get_all("Price List", pluck="name"):
+    for price_list in frappe.get_all("Price List", filters={"currency": base_currency}, pluck="name"):
         frappe.db.set_value("Price List", price_list, "currency", COMPANY_CURRENCY)
 
     # A customer billed in another currency needs a receivable in that currency.
-    for customer in frappe.get_all("Customer", filters={"default_currency": ["!=", ""]}, pluck="name"):
+    for customer in frappe.get_all("Customer", filters={"default_currency": base_currency}, pluck="name"):
         frappe.db.set_value("Customer", customer, "default_currency", COMPANY_CURRENCY)
 
     # The rate every fixture document converts at.
@@ -100,6 +108,10 @@ def bill_the_test_company_in_a_paystack_currency() -> None:
     frappe.db.set_single_value("Global Defaults", "country", COMPANY_COUNTRY)
     frappe.db.set_single_value("System Settings", "country", COMPANY_COUNTRY)
 
+    # erpnext.get_company_currency() memoises into frappe.flags, which survives
+    # clear_cache() and the per-test rollback. Raising the baseline above filled
+    # it with the currency the fixtures shipped, so it is dropped by hand.
+    frappe.flags.company_currency = {}
     frappe.clear_cache()
 
 
