@@ -117,8 +117,13 @@ class PaystackTestCase(BaseTestCase):
             restore_ledger_deletion,
             frappe.db.get_single_value(ACCOUNTS_SETTINGS, "delete_linked_ledger_entries"),
         )
+        # Run either side of the test records this class depends on. Ahead of
+        # them because version-16 raises them here, one class at a time, and a
+        # voucher cannot be raised against a company whose ledgers still sit in
+        # the fixture currency. Behind them because the records themselves
+        # arrive carrying it.
+        bill_the_test_company_in_a_paystack_currency()
         super().setUpClass()
-        # Test records raised after before_tests bring the fixture currency back.
         bill_the_test_company_in_a_paystack_currency()
         frappe.db.set_single_value(ACCOUNTS_SETTINGS, "delete_linked_ledger_entries", 1)
         frappe.db.commit()

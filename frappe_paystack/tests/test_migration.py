@@ -92,15 +92,33 @@ class BackfillTestCase(PaystackTestCase):
         self.addCleanup(GatewaySettingFactory.cleanup, self.gateway_name)
 
     def build_order(self, rate: float = 1000) -> str:
-        """Create a submitted Sales Order no existing payment log points at."""
+        """Create a submitted Sales Order nothing already bills.
+
+        Sales Order names are handed out again once a test rolls back, so a name
+        can arrive already carrying an earlier test's committed log or Payment
+        Request. Either one changes what the backfill sees for this order.
+        """
         for attempt in range(ORDER_ATTEMPTS):
             order = SalesOrderFactory.create(rate=rate)
             self.addCleanup(SalesOrderFactory.cleanup, order)
 
-            if not frappe.db.exists(PAYMENT_LOG, {"linked_docname": order}):
+            if not self.already_billed(order):
                 return order
 
-        raise AssertionError(f"no unreferenced Sales Order name in {attempt + 1} tries")
+        raise AssertionError(f"no unbilled Sales Order name in {attempt + 1} tries")
+
+    def already_billed(self, order: str) -> bool:
+        """Report whether a payment log or a Payment Request already names an order."""
+        return bool(
+            frappe.db.exists(PAYMENT_LOG, {"linked_docname": order})
+            or frappe.db.exists(
+                PAYMENT_REQUEST, {"reference_doctype": "Sales Order", "reference_name": order}
+            )
+        )
+
+    def candidates_for(self, log: str) -> list:
+        """Return the requests the backfill would weigh for a log."""
+        return sorted(candidate_requests(frappe.get_doc(PAYMENT_LOG, log), set()))
 
     def build_request(self, order: str, amount: float = 1000) -> str:
         """Raise a submitted Paystack Payment Request that carries no log."""
@@ -257,9 +275,14 @@ class TestBackfill(BackfillTestCase):
         second = self.build_request(order, 1000)
         log = self.build_log(order)
 
+        # The ambiguity is what is under test, so it is established rather than
+        # assumed: ERPNext folds a second request into the first once the order
+        # has nothing left to bill, which would leave one candidate, not two.
+        self.assertNotEqual(first, second, "the order carried one Payment Request, not two")
+        self.assertEqual(self.candidates_for(log), sorted([first, second]))
+
         report = backfill_payment_requests(TEST_COMPANY)
 
-        self.assertNotEqual(first, second)
         self.assertIn(log, report["ambiguous"])
         self.assertFalse(self.request_on(log))
 
@@ -290,8 +313,12 @@ class TestBackfill(BackfillTestCase):
     def test_a_dry_run_writes_nothing(self) -> None:
         """A dry run reports the link it would make and writes nothing."""
         order = self.build_order()
-        self.build_request(order)
+        request = self.build_request(order)
         log = self.build_log(order)
+
+        # One candidate and no other, so the run has a link to report at all.
+        # A second request against this order would make the log ambiguous.
+        self.assertEqual(self.candidates_for(log), [request])
 
         report = backfill_payment_requests(TEST_COMPANY, dry_run=True)
 

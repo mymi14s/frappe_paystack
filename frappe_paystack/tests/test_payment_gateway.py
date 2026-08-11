@@ -274,7 +274,7 @@ class TestPaymentRequestBridge(PaystackTestCase):
         self.addCleanup(CustomerFactory.cleanup, customer)
 
         order = SalesOrderFactory.create(rate=1000, order_type="Shopping Cart", customer=customer)
-        self.addCleanup(self.cleanup_cart_order, order)
+        self.addCleanup(SalesOrderFactory.cleanup, order)
 
         # Raised the way the checkout does, so the request carries the gateway,
         # the channel and the account the billing reads back off it. A request
@@ -282,6 +282,10 @@ class TestPaymentRequestBridge(PaystackTestCase):
         url = payment_request_checkout_url(frappe.get_doc("Sales Order", order), 1000, "buyer@example.com")
         log_name = url.rsplit("/", 1)[-1]
         self.addCleanup(PaymentLogFactory.cleanup, log_name)
+        # Cleanups run last-registered-first, and the log's own cleanup cancels
+        # the order it names. The order cannot be cancelled while the invoice the
+        # settlement raised against it still stands, so that goes first.
+        self.addCleanup(self.cleanup_cart_billing, order)
 
         pr_name = frappe.db.get_value("Paystack Payment Log", log_name, "payment_request")
         self.assertTrue(pr_name, "the checkout raised no Payment Request")
@@ -299,8 +303,12 @@ class TestPaymentRequestBridge(PaystackTestCase):
         self.assertEqual(flt(frappe.db.get_value("Sales Order", order, "per_billed")), 100.0)
         self.assertEqual(frappe.db.get_value("Payment Request", pr_name, "status"), "Paid")
 
-    def cleanup_cart_order(self, order: str) -> None:
-        """Unwind the invoice, entries and requests the settlement raised on an order."""
+    def cleanup_cart_billing(self, order: str) -> None:
+        """Unwind the invoice and entries the settlement raised against an order.
+
+        The order and its Payment Request are left to the payment log's own
+        cleanup, which cancels them once nothing points at them.
+        """
         for invoice in set(
             frappe.get_all("Sales Invoice Item", filters={"sales_order": order}, pluck="parent")
         ):
@@ -308,15 +316,6 @@ class TestPaymentRequestBridge(PaystackTestCase):
             cleanup_doc("Sales Invoice", invoice)
 
         cleanup_linked_payment_entries("Sales Order", order)
-
-        for request in frappe.get_all(
-            "Payment Request",
-            filters={"reference_doctype": "Sales Order", "reference_name": order},
-            pluck="name",
-        ):
-            cleanup_doc("Payment Request", request)
-
-        SalesOrderFactory.cleanup(order)
 
     def test_notify_payment_authorized_is_safe_for_missing_reference(self):
         """A log naming a Payment Request that is gone books nothing and alerts nobody."""
