@@ -82,26 +82,24 @@ def bill_the_test_company_in_a_paystack_currency() -> None:
     currency stay foreign, because that is what the multi-currency tests bill.
     """
     base_currency = frappe.db.get_value("Company", TEST_COMPANY, "default_currency")
-    if not base_currency or base_currency == COMPANY_CURRENCY:
-        return
+    if base_currency and base_currency != COMPANY_CURRENCY:
+        frappe.db.set_value("Company", TEST_COMPANY, "default_currency", COMPANY_CURRENCY)
+        frappe.db.set_value("Company", TEST_COMPANY, "country", COMPANY_COUNTRY)
 
-    frappe.db.set_value("Company", TEST_COMPANY, "default_currency", COMPANY_CURRENCY)
-    frappe.db.set_value("Company", TEST_COMPANY, "country", COMPANY_COUNTRY)
+        for account in frappe.get_all(
+            "Account",
+            filters={"company": TEST_COMPANY, "is_group": 0, "account_currency": base_currency},
+            pluck="name",
+        ):
+            frappe.db.set_value("Account", account, "account_currency", COMPANY_CURRENCY)
 
-    for account in frappe.get_all(
-        "Account",
-        filters={"company": TEST_COMPANY, "is_group": 0, "account_currency": base_currency},
-        pluck="name",
-    ):
-        frappe.db.set_value("Account", account, "account_currency", COMPANY_CURRENCY)
+        # Selling documents read the rate from the price list, so it is moved too.
+        for price_list in frappe.get_all("Price List", filters={"currency": base_currency}, pluck="name"):
+            frappe.db.set_value("Price List", price_list, "currency", COMPANY_CURRENCY)
 
-    # Selling documents read the rate from the price list, so it is moved too.
-    for price_list in frappe.get_all("Price List", filters={"currency": base_currency}, pluck="name"):
-        frappe.db.set_value("Price List", price_list, "currency", COMPANY_CURRENCY)
-
-    # A customer billed in another currency needs a receivable in that currency.
-    for customer in frappe.get_all("Customer", filters={"default_currency": base_currency}, pluck="name"):
-        frappe.db.set_value("Customer", customer, "default_currency", COMPANY_CURRENCY)
+        # A customer billed in another currency needs a receivable in that currency.
+        for customer in frappe.get_all("Customer", filters={"default_currency": base_currency}, pluck="name"):
+            frappe.db.set_value("Customer", customer, "default_currency", COMPANY_CURRENCY)
 
     # The rate every fixture document converts at.
     frappe.db.set_single_value("Global Defaults", "default_currency", COMPANY_CURRENCY)
