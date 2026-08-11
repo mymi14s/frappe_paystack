@@ -20,6 +20,11 @@ FRAPPE_MAJOR_VERSION = int(frappe.__version__.split(".")[0])
 COMPANY_CURRENCY = "NGN"
 COMPANY_COUNTRY = "Nigeria"
 
+# The currency the ERPNext fixtures raise _Test Company and its ledgers in, named
+# outright because the company itself has already been moved off it by the time
+# a later test record arrives carrying it.
+FIXTURE_CURRENCY = "INR"
+
 # The company frappe's test-record machinery raises _Test Company against.
 SETUP_WIZARD_ARGS = {
     "currency": "NGN",
@@ -77,29 +82,33 @@ def bill_the_test_company_in_a_paystack_currency() -> None:
     on their own. Written straight to the table because the controllers refuse a
     currency change, and no entry has been posted yet.
 
-    Only what the fixtures raised in the old base currency moves. The accounts,
-    price lists and customers the fixtures deliberately hold in a foreign
-    currency stay foreign, because that is what the multi-currency tests bill.
+    Only what the fixtures raised in FIXTURE_CURRENCY moves. The accounts, price
+    lists and customers the fixtures deliberately hold in a foreign currency stay
+    foreign, because that is what the multi-currency tests bill.
+
+    Runs on every call rather than once: PaystackTestCase.setUpClass calls this
+    again for each class, and on version-16 the test records a class depends on
+    are raised lazily, so ledgers in the fixture currency keep arriving after the
+    session opened.
     """
-    base_currency = frappe.db.get_value("Company", TEST_COMPANY, "default_currency")
-    if base_currency and base_currency != COMPANY_CURRENCY:
+    if frappe.db.exists("Company", TEST_COMPANY):
         frappe.db.set_value("Company", TEST_COMPANY, "default_currency", COMPANY_CURRENCY)
         frappe.db.set_value("Company", TEST_COMPANY, "country", COMPANY_COUNTRY)
 
-        for account in frappe.get_all(
-            "Account",
-            filters={"company": TEST_COMPANY, "is_group": 0, "account_currency": base_currency},
-            pluck="name",
-        ):
-            frappe.db.set_value("Account", account, "account_currency", COMPANY_CURRENCY)
+    for account in frappe.get_all(
+        "Account",
+        filters={"company": TEST_COMPANY, "is_group": 0, "account_currency": FIXTURE_CURRENCY},
+        pluck="name",
+    ):
+        frappe.db.set_value("Account", account, "account_currency", COMPANY_CURRENCY)
 
-        # Selling documents read the rate from the price list, so it is moved too.
-        for price_list in frappe.get_all("Price List", filters={"currency": base_currency}, pluck="name"):
-            frappe.db.set_value("Price List", price_list, "currency", COMPANY_CURRENCY)
+    # Selling documents read the rate from the price list, so it is moved too.
+    for price_list in frappe.get_all("Price List", filters={"currency": FIXTURE_CURRENCY}, pluck="name"):
+        frappe.db.set_value("Price List", price_list, "currency", COMPANY_CURRENCY)
 
-        # A customer billed in another currency needs a receivable in that currency.
-        for customer in frappe.get_all("Customer", filters={"default_currency": base_currency}, pluck="name"):
-            frappe.db.set_value("Customer", customer, "default_currency", COMPANY_CURRENCY)
+    # A customer billed in another currency needs a receivable in that currency.
+    for customer in frappe.get_all("Customer", filters={"default_currency": FIXTURE_CURRENCY}, pluck="name"):
+        frappe.db.set_value("Customer", customer, "default_currency", COMPANY_CURRENCY)
 
     # The rate every fixture document converts at.
     frappe.db.set_single_value("Global Defaults", "default_currency", COMPANY_CURRENCY)

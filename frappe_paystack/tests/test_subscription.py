@@ -9,11 +9,11 @@ from frappe.utils import add_days, today
 from frappe_paystack.api import process_webhook_event
 from frappe_paystack.tests.factories import (
     TEST_COMPANY,
-    ChargeableInvoiceFactory,
     CustomerAuthorizationFactory,
     CustomerFactory,
     GatewaySettingFactory,
     PaymentLogFactory,
+    SalesInvoiceFactory,
     SubscriptionFactory,
     cleanup_user,
 )
@@ -61,11 +61,19 @@ class SubscriptionTestCase(PaystackTestCase):
         self.addCleanup(SubscriptionFactory.cleanup, self.subscription)
 
     def subscription_invoice(self, **kwargs: Any) -> str:
-        """Raise a submitted invoice the way a Subscription period close does."""
-        invoice = ChargeableInvoiceFactory.create(
-            customer=SUBSCRIBER, subscription=self.subscription, **kwargs
-        )
-        self.addCleanup(ChargeableInvoiceFactory.cleanup, invoice)
+        """Raise a submitted invoice the way a Subscription period close does.
+
+        ERPNext bills a subscription in its plan's currency, and the plan is raised
+        at the company currency, so the invoice is raised there too. Billing it in
+        another currency is a state no period close can produce, and it leaves the
+        subscriber holding ledger entries in two currencies at once.
+        """
+        return self.customer_invoice(subscription=self.subscription, **kwargs)
+
+    def customer_invoice(self, **kwargs: Any) -> str:
+        """Raise a submitted invoice against the subscriber, in the company currency."""
+        invoice = SalesInvoiceFactory.create(customer=SUBSCRIBER, **kwargs)
+        self.addCleanup(SalesInvoiceFactory.cleanup, invoice)
         return invoice
 
     def saved_card(self) -> str:
@@ -127,9 +135,9 @@ class TestCollectableInvoices(SubscriptionTestCase):
 
     def test_an_invoice_no_subscription_raised_is_never_collected(self) -> None:
         """An invoice no subscription raised is left out."""
-        invoice = ChargeableInvoiceFactory.create(customer=SUBSCRIBER)
-        self.addCleanup(ChargeableInvoiceFactory.cleanup, invoice)
+        invoice = self.customer_invoice()
 
+        self.assertFalse(frappe.db.get_value(SALES_INVOICE, invoice, "subscription"))
         self.assertNotIn(invoice, collectable_invoices(TEST_COMPANY))
 
     def test_a_settled_invoice_is_not_collected(self) -> None:

@@ -73,6 +73,14 @@ CHARGE_CURRENCY = ChargeableInvoiceFactory.CURRENCY
 # The customer these invoices bill.
 CHARGE_CUSTOMER = "_Test Paystack USD Customer"
 
+# A currency outside SUPPORTED_CURRENCIES, and the ledger an invoice in it needs.
+# The company currency is one Paystack charges, so an unchargeable document has
+# to be raised against a receivable of its own.
+UNCHARGEABLE_CURRENCY = "INR"
+UNCHARGEABLE_RATE = 0.5
+UNCHARGEABLE_CUSTOMER = "_Test Paystack Unchargeable Customer"
+UNCHARGEABLE_RECEIVABLE = "_Test Paystack Unchargeable Receivable"
+
 WEBHOOK_CUSTOMER = "_Test Paystack Webhook Customer"
 WEBHOOK_EMAIL = "webhook.buyer@example.com"
 
@@ -615,9 +623,71 @@ class TestPaymentLinkCurrency(PaystackTestCase):
         self.gateway_name = GatewaySettingFactory.create()
         self.addCleanup(GatewaySettingFactory.cleanup, self.gateway_name)
 
-    def company_currency_invoice(self) -> str:
-        """Raise a submitted invoice in NGN, which Paystack cannot charge."""
+    def chargeable_invoice(self) -> str:
+        """Raise a submitted invoice in the company currency, which Paystack charges."""
         invoice = SalesInvoiceFactory.create(rate=1000)
+        self.addCleanup(SalesInvoiceFactory.cleanup, invoice)
+        return invoice
+
+    def logs_raised_for(self, invoice: str) -> list:
+        """Return the payment logs raised against an invoice since this test began.
+
+        Sales Invoice names are handed out again once a test rolls back, so a bare
+        count on linked_docname also picks up a log an earlier test committed
+        against the same name.
+        """
+        return frappe.get_all(
+            PAYMENT_LOG,
+            filters={"linked_docname": invoice, "creation": [">=", self.started_at]},
+            pluck="name",
+        )
+
+    def unchargeable_receivable(self) -> str:
+        """Return a receivable ledger held in a currency Paystack cannot charge."""
+        abbr = frappe.get_cached_value("Company", TEST_COMPANY, "abbr")
+        name = f"{UNCHARGEABLE_RECEIVABLE} - {abbr}"
+        if frappe.db.exists("Account", name):
+            return name
+
+        # Hung beside the receivable the company already bills through, so it
+        # inherits the same place in the tree without assuming a chart layout.
+        default = frappe.get_cached_value("Company", TEST_COMPANY, "default_receivable_account")
+        account = frappe.get_doc(
+            {
+                "doctype": "Account",
+                "account_name": UNCHARGEABLE_RECEIVABLE,
+                "parent_account": frappe.db.get_value("Account", default, "parent_account"),
+                "company": TEST_COMPANY,
+                "account_type": "Receivable",
+                "account_currency": UNCHARGEABLE_CURRENCY,
+                "is_group": 0,
+            }
+        )
+        account.flags.ignore_permissions = True
+        account.insert()
+        self.addCleanup(cleanup_doc, "Account", account.name)
+        return account.name
+
+    def unchargeable_invoice(self) -> str:
+        """Raise a submitted invoice in a currency Paystack cannot charge."""
+        receivable = self.unchargeable_receivable()
+
+        customer = CustomerFactory.create(customer_name=UNCHARGEABLE_CUSTOMER)
+        self.addCleanup(CustomerFactory.cleanup, customer)
+        # The party account decides the currency the invoice may be raised in.
+        record = frappe.get_doc("Customer", customer)
+        record.default_currency = UNCHARGEABLE_CURRENCY
+        record.set("accounts", [{"company": TEST_COMPANY, "account": receivable}])
+        record.flags.ignore_permissions = True
+        record.save()
+
+        invoice = SalesInvoiceFactory.create(
+            rate=1000,
+            customer=customer,
+            currency=UNCHARGEABLE_CURRENCY,
+            conversion_rate=UNCHARGEABLE_RATE,
+            debit_to=receivable,
+        )
         self.addCleanup(SalesInvoiceFactory.cleanup, invoice)
         return invoice
 
@@ -625,23 +695,27 @@ class TestPaymentLinkCurrency(PaystackTestCase):
     def test_unsupported_currency_throws(self, mock_vp):
         """A euro charge is refused and writes no Payment Log."""
         mock_vp.return_value = {"status": True, "data": {"status": "success"}}
-        invoice = self.company_currency_invoice()
+        invoice = self.chargeable_invoice()
 
         with self.assertRaises(frappe.ValidationError):
             create_payment_link("Sales Invoice", invoice, currency="EUR")
 
-        self.assertEqual(frappe.db.count("Paystack Payment Log", {"linked_docname": invoice}), 0)
+        self.assertEqual(self.logs_raised_for(invoice), [])
 
     @patch(VALIDATE_PAYMENT_PATCH)
     def test_unchargeable_document_currency_throws(self, mock_vp):
-        """The rupee invoice is refused, whatever currency the caller asks for."""
+        """An invoice Paystack cannot charge is refused, whatever the caller asks for."""
         mock_vp.return_value = {"status": True, "data": {"status": "success"}}
-        invoice = self.company_currency_invoice()
+        invoice = self.unchargeable_invoice()
 
         with self.assertRaises(frappe.ValidationError):
             create_payment_link("Sales Invoice", invoice)
 
-        self.assertEqual(frappe.db.count("Paystack Payment Log", {"linked_docname": invoice}), 0)
+        # A supported currency on the call does not rescue the document's own.
+        with self.assertRaises(frappe.ValidationError):
+            create_payment_link("Sales Invoice", invoice, currency=CHARGE_CURRENCY)
+
+        self.assertEqual(self.logs_raised_for(invoice), [])
 
     @patch(VALIDATE_PAYMENT_PATCH)
     def test_document_currency_reaches_the_log(self, mock_vp):

@@ -24,6 +24,7 @@ from frappe_paystack.tests.factories import (
 )
 from frappe_paystack.tests.test_base import PaystackTestCase
 from frappe_paystack.utils import SUPPORTED_CURRENCIES, resolve_paystack_settings
+from frappe_paystack.utils.payment_request import payment_request_checkout_url
 
 VALIDATE_PAYMENT_PATCH = (
     "frappe_paystack.frappe_paystack.doctype.paystack_payment_log."
@@ -273,16 +274,17 @@ class TestPaymentRequestBridge(PaystackTestCase):
         self.addCleanup(CustomerFactory.cleanup, customer)
 
         order = SalesOrderFactory.create(rate=1000, order_type="Shopping Cart", customer=customer)
-        self.addCleanup(SalesOrderFactory.cleanup, order)
+        self.addCleanup(self.cleanup_cart_order, order)
 
-        log_name = PaymentLogFactory.create(
-            status="Pending",
-            amount=1000,
-            linked_doctype="Sales Order",
-            linked_docname=order,
-        )
+        # Raised the way the checkout does, so the request carries the gateway,
+        # the channel and the account the billing reads back off it. A request
+        # assembled by hand here drifts from the one production submits.
+        url = payment_request_checkout_url(frappe.get_doc("Sales Order", order), 1000, "buyer@example.com")
+        log_name = url.rsplit("/", 1)[-1]
         self.addCleanup(PaymentLogFactory.cleanup, log_name)
-        pr_name = self.create_test_payment_request(log_name)
+
+        pr_name = frappe.db.get_value("Paystack Payment Log", log_name, "payment_request")
+        self.assertTrue(pr_name, "the checkout raised no Payment Request")
 
         frappe.db.set_value(
             "Paystack Payment Log",
@@ -294,12 +296,27 @@ class TestPaymentRequestBridge(PaystackTestCase):
 
         invoice = frappe.db.get_value("Sales Invoice Item", {"sales_order": order, "docstatus": 1}, "parent")
         self.assertTrue(invoice, "Sales Order was paid but never invoiced")
-        # Payment Entries are torn down ahead of the invoice and the order.
-        self.addCleanup(cleanup_doc, "Sales Invoice", invoice)
-        self.addCleanup(cleanup_linked_payment_entries, "Sales Invoice", invoice)
-        self.addCleanup(cleanup_linked_payment_entries, "Sales Order", order)
         self.assertEqual(flt(frappe.db.get_value("Sales Order", order, "per_billed")), 100.0)
         self.assertEqual(frappe.db.get_value("Payment Request", pr_name, "status"), "Paid")
+
+    def cleanup_cart_order(self, order: str) -> None:
+        """Unwind the invoice, entries and requests the settlement raised on an order."""
+        for invoice in set(
+            frappe.get_all("Sales Invoice Item", filters={"sales_order": order}, pluck="parent")
+        ):
+            cleanup_linked_payment_entries("Sales Invoice", invoice)
+            cleanup_doc("Sales Invoice", invoice)
+
+        cleanup_linked_payment_entries("Sales Order", order)
+
+        for request in frappe.get_all(
+            "Payment Request",
+            filters={"reference_doctype": "Sales Order", "reference_name": order},
+            pluck="name",
+        ):
+            cleanup_doc("Payment Request", request)
+
+        SalesOrderFactory.cleanup(order)
 
     def test_notify_payment_authorized_is_safe_for_missing_reference(self):
         """A log naming a Payment Request that is gone books nothing and alerts nobody."""
