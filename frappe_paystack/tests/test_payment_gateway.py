@@ -277,14 +277,12 @@ class TestPaymentRequestBridge(PaystackTestCase):
         self.addCleanup(SalesOrderFactory.cleanup, order)
 
         # Raised the way the checkout does, so the request carries the gateway,
-        # the channel and the account the billing reads back off it. A request
-        # assembled by hand here drifts from the one production submits.
+        # channel and account the billing reads back off it.
         url = payment_request_checkout_url(frappe.get_doc("Sales Order", order), 1000, "buyer@example.com")
         log_name = url.rsplit("/", 1)[-1]
         self.addCleanup(PaymentLogFactory.cleanup, log_name)
-        # Cleanups run last-registered-first, and the log's own cleanup cancels
-        # the order it names. The order cannot be cancelled while the invoice the
-        # settlement raised against it still stands, so that goes first.
+        # Cleanups run last-registered-first, and the log's cleanup cancels the
+        # order, which the invoice raised against it blocks. So that goes first.
         self.addCleanup(self.cleanup_cart_billing, order)
 
         pr_name = frappe.db.get_value("Paystack Payment Log", log_name, "payment_request")
@@ -306,8 +304,7 @@ class TestPaymentRequestBridge(PaystackTestCase):
     def cleanup_cart_billing(self, order: str) -> None:
         """Unwind the invoice and entries the settlement raised against an order.
 
-        The order and its Payment Request are left to the payment log's own
-        cleanup, which cancels them once nothing points at them.
+        The order and its request are left to the payment log's own cleanup.
         """
         for invoice in set(
             frappe.get_all("Sales Invoice Item", filters={"sales_order": order}, pluck="parent")

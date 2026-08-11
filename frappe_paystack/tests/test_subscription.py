@@ -63,10 +63,8 @@ class SubscriptionTestCase(PaystackTestCase):
     def subscription_invoice(self, **kwargs: Any) -> str:
         """Raise a submitted invoice the way a Subscription period close does.
 
-        ERPNext bills a subscription in its plan's currency, and the plan is raised
-        at the company currency, so the invoice is raised there too. Billing it in
-        another currency is a state no period close can produce, and it leaves the
-        subscriber holding ledger entries in two currencies at once.
+        ERPNext bills a subscription in its plan's currency, and the plan is
+        raised at the company currency, so the invoice is raised there too.
         """
         return self.customer_invoice(subscription=self.subscription, **kwargs)
 

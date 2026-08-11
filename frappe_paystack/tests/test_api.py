@@ -73,9 +73,8 @@ CHARGE_CURRENCY = ChargeableInvoiceFactory.CURRENCY
 # The customer these invoices bill.
 CHARGE_CUSTOMER = "_Test Paystack USD Customer"
 
-# A currency outside SUPPORTED_CURRENCIES, and the ledger an invoice in it needs.
-# The company currency is one Paystack charges, so an unchargeable document has
-# to be raised against a receivable of its own.
+# A currency outside SUPPORTED_CURRENCIES. The company currency is one Paystack
+# charges, so an unchargeable document needs a receivable of its own.
 UNCHARGEABLE_CURRENCY = "INR"
 UNCHARGEABLE_RATE = 0.5
 UNCHARGEABLE_CUSTOMER = "_Test Paystack Unchargeable Customer"
@@ -632,9 +631,8 @@ class TestPaymentLinkCurrency(PaystackTestCase):
     def logs_raised_for(self, invoice: str) -> list:
         """Return the payment logs raised against an invoice since this test began.
 
-        Sales Invoice names are handed out again once a test rolls back, so a bare
-        count on linked_docname also picks up a log an earlier test committed
-        against the same name.
+        Names are handed out again once a test rolls back, so a bare count on
+        linked_docname also picks up an earlier test's committed log.
         """
         return frappe.get_all(
             PAYMENT_LOG,
@@ -649,8 +647,8 @@ class TestPaymentLinkCurrency(PaystackTestCase):
         if frappe.db.exists("Account", name):
             return name
 
-        # Hung beside the receivable the company already bills through, so it
-        # inherits the same place in the tree without assuming a chart layout.
+        # Hung beside the receivable the company already bills through, rather
+        # than assuming a chart layout.
         default = frappe.get_cached_value("Company", TEST_COMPANY, "default_receivable_account")
         account = frappe.get_doc(
             {

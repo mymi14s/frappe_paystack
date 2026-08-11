@@ -94,9 +94,8 @@ class BackfillTestCase(PaystackTestCase):
     def build_order(self, rate: float = 1000) -> str:
         """Create a submitted Sales Order nothing already bills.
 
-        Sales Order names are handed out again once a test rolls back, so a name
-        can arrive already carrying an earlier test's committed log or Payment
-        Request. Either one changes what the backfill sees for this order.
+        Names are handed out again once a test rolls back, so one can arrive
+        carrying an earlier test's committed log or request.
         """
         for attempt in range(ORDER_ATTEMPTS):
             order = SalesOrderFactory.create(rate=rate)
@@ -121,11 +120,22 @@ class BackfillTestCase(PaystackTestCase):
         return sorted(candidate_requests(frappe.get_doc(PAYMENT_LOG, log), set()))
 
     def build_request(self, order: str, amount: float = 1000) -> str:
-        """Raise a submitted Paystack Payment Request that carries no log."""
+        """Raise a submitted Paystack Payment Request that carries no log.
+
+        Submitting one runs get_payment_url(), which raises a log pointing back
+        at it. That log would claim the request, and a claimed request is no
+        candidate, so it is dropped: the backfill is for pre-bridge requests.
+        """
         doc = frappe.get_doc("Sales Order", order)
         request = build_payment_request(doc, amount, "buyer@example.com")
         self.addCleanup(cleanup_doc, PAYMENT_REQUEST, request.name)
+        self.drop_bridge_logs(request.name)
         return request.name
+
+    def drop_bridge_logs(self, request: str) -> None:
+        """Delete the payment logs that submitting a Payment Request raised."""
+        for log in frappe.get_all(PAYMENT_LOG, filters={"payment_request": request}, pluck="name"):
+            frappe.delete_doc(PAYMENT_LOG, log, force=True, ignore_permissions=True)
 
     def build_log(self, order: str, amount: float = 1000, linked_doctype: str = "Sales Order") -> str:
         """Create a payment log that carries no Payment Request."""
@@ -275,9 +285,8 @@ class TestBackfill(BackfillTestCase):
         second = self.build_request(order, 1000)
         log = self.build_log(order)
 
-        # The ambiguity is what is under test, so it is established rather than
-        # assumed: ERPNext folds a second request into the first once the order
-        # has nothing left to bill, which would leave one candidate, not two.
+        # ERPNext folds the second request into the first once the order has
+        # nothing left to bill, which would leave one candidate, not two.
         self.assertNotEqual(first, second, "the order carried one Payment Request, not two")
         self.assertEqual(self.candidates_for(log), sorted([first, second]))
 
@@ -316,8 +325,7 @@ class TestBackfill(BackfillTestCase):
         request = self.build_request(order)
         log = self.build_log(order)
 
-        # One candidate and no other, so the run has a link to report at all.
-        # A second request against this order would make the log ambiguous.
+        # One candidate and no other, or the run has no link to report.
         self.assertEqual(self.candidates_for(log), [request])
 
         report = backfill_payment_requests(TEST_COMPANY, dry_run=True)
