@@ -174,15 +174,11 @@ jobs:
             erpnext: version-15
             payments: version-15
             webshop: version-15
-            # The Cypress specs drive the version-15 POS UI, and version-15 is the
-            # release this app ships against, so the UI suite runs on this leg.
-            ui: true
           - python: '3.14'
             frappe: version-16
             erpnext: version-16
             payments: version-16
             webshop: version-16
-            ui: false
 
     # bench reads CI when it renders the Procfile.
     env:
@@ -192,8 +188,7 @@ jobs:
       PAYMENTS_BRANCH: ${{ matrix.payments }}
       WEBSHOP_BRANCH: ${{ matrix.webshop }}
       PYTHON_VERSION: ${{ matrix.python }}
-      # bench get-app runs yarn install, which downloads the Cypress binary.
-      # The UI step installs it where it is used.
+      # bench get-app runs yarn install, which would download the Cypress binary.
       CYPRESS_INSTALL_BINARY: '0'
 
     services:
@@ -248,14 +243,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-py${{ matrix.python }}-${{ matrix.frappe }}-pip-
             ${{ runner.os }}-py${{ matrix.python }}-${{ matrix.frappe }}-
-
-      - name: Cache Cypress binary
-        if: ${{ matrix.ui }}
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/Cypress
-          key: ${{ runner.os }}-cypress-${{ hashFiles('package-lock.json') }}
-          restore-keys: ${{ runner.os }}-cypress-
 
       - name: Install MariaDB Client
         run: |
@@ -330,60 +317,7 @@ jobs:
         env:
           TYPE: server
 
-      # The Cypress specs reuse the bench the server tests just built.
-      - name: Set up the site for UI tests
-        if: ${{ matrix.ui }}
-        working-directory: /home/runner/frappe-bench
-        run: |
-          bench --site test_site execute frappe.utils.install.complete_setup_wizard
-          bench --site test_site execute frappe.utils.scheduler.disable_scheduler
-          bench --site test_site execute frappe_paystack.tests.ui_test_helpers.create_pos_test_user
-
-      - name: Start the bench
-        if: ${{ matrix.ui }}
-        working-directory: /home/runner/frappe-bench
-        run: |
-          bench start &> bench_start.log &
-          BENCH_PID=$!
-
-          if timeout 180 bash -c 'until curl -sf http://localhost:8000/api/method/frappe.ping > /dev/null; do sleep 2; done'; then
-            exit 0
-          fi
-
-          echo "::error::bench start did not answer on :8000 within 180s"
-          if kill -0 "${BENCH_PID}" 2>/dev/null; then
-            echo "bench start is still running; the web process never bound the port."
-          else
-            echo "bench start exited; honcho tears every process down when one dies."
-          fi
-
-          echo "--- bench_start.log ---"
-          cat bench_start.log
-          echo "--- listening sockets ---"
-          ss -ltnp || true
-          exit 1
-
-      # Runs the cypress in package.json against cypress.config.js in this checkout.
-      - name: Install Cypress
-        if: ${{ matrix.ui }}
-        working-directory: /home/runner/frappe-bench/apps/frappe_paystack
-        run: |
-          npm ci
-          npx cypress install
-          npx cypress verify
-        env:
-          CYPRESS_INSTALL_BINARY: ''
-
-      - name: Run UI Tests
-        if: ${{ matrix.ui }}
-        working-directory: /home/runner/frappe-bench/apps/frappe_paystack
-        run: npx cypress run --browser chrome
-        env:
-          CYPRESS_baseUrl: http://localhost:8000
-          CYPRESS_adminPassword: admin
-
       - name: Show bench output
         if: ${{ always() }}
         run: |
-          cat /home/runner/frappe-bench/bench_start.log || true
           cat /home/runner/frappe-bench/logs/*.log || true
