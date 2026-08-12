@@ -3,7 +3,7 @@ name: CI
 on:
   # A branch with an open pull request is covered by the pull_request event.
   push:
-    branches: [version-15, main]
+    branches: [version-16]
   pull_request:
   workflow_dispatch:
 
@@ -17,8 +17,7 @@ permissions:
 
 env:
   # The coverage the report is measured with. .coveragerc is written for this line.
-  # frappe pins coverage ~=6.5.0 on version-15 and ~=7.10.0 on version-16, and both
-  # legs force this version over the pin.
+  # frappe pins coverage ~=7.10.0 on version-16; this version is forced over it.
   COVERAGE_VERSION: '7.15.2'
 
 jobs:
@@ -31,7 +30,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.14'
           cache: pip
 
       # Runs .pre-commit-config.yaml.
@@ -48,7 +47,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.14'
           cache: pip
 
       # Versions match the rev pins in .pre-commit-config.yaml.
@@ -93,7 +92,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.14'
           cache: pip
 
       - name: Download Semgrep rules
@@ -113,7 +112,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.14'
 
       - name: Cache pip
         uses: actions/cache@v4
@@ -162,18 +161,11 @@ jobs:
     needs: [linter, code-quality]
 
     strategy:
-      # Each pair reports on its own; one red leg leaves the other running.
       fail-fast: false
       matrix:
-        # The interpreter is paired with the framework branch, not crossed with it.
-        # frappe version-15 declares requires-python >=3.10,<3.15; frappe
-        # version-16 declares >=3.14,<3.15.
+        # frappe version-16 declares requires-python >=3.14,<3.15, and so does
+        # this app.
         include:
-          - python: '3.12'
-            frappe: version-15
-            erpnext: version-15
-            payments: version-15
-            webshop: version-15
           - python: '3.14'
             frappe: version-16
             erpnext: version-16
@@ -237,8 +229,6 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          # The interpreter and the framework branch are in the key, so the two legs
-          # keep separate caches.
           key: ${{ runner.os }}-py${{ matrix.python }}-${{ matrix.frappe }}-pip-${{ hashFiles('**/*requirements.txt', '**/pyproject.toml', '**/setup.py', '**/setup.cfg') }}
           restore-keys: |
             ${{ runner.os }}-py${{ matrix.python }}-${{ matrix.frappe }}-pip-
