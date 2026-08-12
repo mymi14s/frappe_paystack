@@ -1,0 +1,15 @@
+{
+	"name": "frappe_paystack",
+	"version": "0.0.1",
+	"private": true,
+	"description": "Paystack integration for Frappe/ERPNext",
+	"scripts": {
+		"test": "vitest run",
+		"test:watch": "vitest"
+	},
+	"devDependencies": {
+		"cypress": "15.19.0",
+		"jsdom": "^25.0.1",
+		"vitest": "^2.1.9"
+	}
+}

@@ -1,47 +1,48 @@
+import json
+
 import frappe
+from frappe import _
 
 PAYMENT_LOG = "Paystack Payment Log"
 
-def get_context(context):
-    context.title = "Paystack Checkout"
+# Escapes for the characters that close the script element the payload sits in.
+SCRIPT_ESCAPES = (("<", "\\u003c"), (">", "\\u003e"), ("&", "\\u0026"))
+
+no_cache = 1
+
+
+def script_payload(data: dict) -> str:
+    """Return data as JSON whose text cannot close the script tag holding it."""
+    payload = json.dumps(data)
+
+    for character, escape in SCRIPT_ESCAPES:
+        payload = payload.replace(character, escape)
+
+    return payload
+
+
+def get_context(context: dict) -> dict:
+    """
+    Build the checkout page context for a payment log reference.
+
+    An unknown reference yields a context with no doc and a null payload.
+    """
+    context.no_cache = 1
+    context.title = _("Complete Payment")
+    context.reference = None
+    context.doc = None
+    # Serialised separately so the template's <script> block embeds JSON.
+    context.payload = "null"
+
     reference = frappe.form_dict.reference
-    if not reference:
-        context.reference = None
-    else:
-        if frappe.db.exists(PAYMENT_LOG, {"name": reference}):
-            doc = frappe.get_doc(PAYMENT_LOG, reference)
-            context.doc = doc.get_data()
-            context.reference = reference
-        else:
-            context.reference = None
+    if not reference or not frappe.db.exists(PAYMENT_LOG, reference):
+        return context
+
+    doc = frappe.get_doc(PAYMENT_LOG, reference)
+    data = doc.get_data()
+
+    context.reference = reference
+    context.doc = data
+    context.payload = script_payload(data)
 
     return context
-
-
-@frappe.whitelist(allow_guest=True)
-def get_payment_request(reference_doctype, reference_docname):
-    if not (reference_doctype and reference_docname):
-        return {'error':"Invalid payment link."}
-    payment_request = frappe.db.get_value(
-        reference_doctype, {
-            "name":reference_docname,
-            "docstatus":1,
-            "status":["=", "Requested"],
-            "payment_request_type": "Inward"
-        }, 
-        "*", as_dict=1
-    )
-    if not payment_request:
-        return {'error':"Invalid payment link."}
-    if payment_request.status=='Paid':
-        return {'error':"Payment has already been made."}
-    public_key = frappe.db.get_value(
-        "Paystack Gateway Setting",
-        {'enabled':1,},
-        ["public_key"]
-    )
-    if not public_key:
-        return {'error':"Payment method is unavailable at the moment, please contact us directly.."}
-    payment_request.public_key = public_key
-    return payment_request
-

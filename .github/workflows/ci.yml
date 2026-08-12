@@ -1,22 +1,195 @@
-
 name: CI
 
 on:
+  # A branch with an open pull request is covered by the pull_request event.
   push:
-    branches:
-      - version-16
+    branches: [version-15, main]
   pull_request:
+  workflow_dispatch:
 
 concurrency:
-  group: frappe-paystack-${{ github.event.number }}
+  # github.event.number is empty on push; github.ref keeps the branches separate.
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
+env:
+  # The coverage the report is measured with. .coveragerc is written for this line.
+  # frappe pins coverage ~=6.5.0 on version-15 and ~=7.10.0 on version-16, and both
+  # legs force this version over the pin.
+  COVERAGE_VERSION: '7.15.2'
+
 jobs:
+  linter:
+    name: 'Frappe Linter'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      # Runs .pre-commit-config.yaml.
+      - uses: pre-commit/action@v3.0.0
+        env:
+          SKIP: no-commit-to-branch
+
+  code-quality:
+    name: 'Code Quality'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      # Versions match the rev pins in .pre-commit-config.yaml.
+      - name: Install tools
+        id: install
+        run: |
+          pip install \
+            isort==8.0.1 \
+            black==26.5.1 \
+            flake8==7.3.0 \
+            pylint==4.0.6 \
+            mypy==2.3.0
+
+      # Each tool reports independently; the job fails if any step failed.
+      - name: isort
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: isort --check-only --diff .
+
+      - name: black
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: black --check --diff .
+
+      - name: flake8
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: flake8 .
+
+      # ignored-modules in pyproject.toml covers the bench packages.
+      - name: pylint
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: pylint --rcfile=pyproject.toml frappe_paystack
+
+      - name: mypy
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: mypy --config-file=pyproject.toml frappe_paystack
+
+  semgrep:
+    name: 'Semgrep Rules'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Download Semgrep rules
+        run: git clone --depth 1 https://github.com/frappe/semgrep-rules.git frappe-semgrep-rules
+
+      - name: Run Semgrep rules
+        run: |
+          pip install semgrep
+          semgrep ci --config ./frappe-semgrep-rules/rules --config r/python.lang.correctness
+
+  deps-vulnerable-check:
+    name: 'Vulnerable Dependency Check'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/*requirements.txt', '**/pyproject.toml', '**/setup.py') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+
+      - name: Install and run pip-audit
+        run: |
+          pip install pip-audit
+          cd "${GITHUB_WORKSPACE}"
+          pip-audit --desc on .
+
+  frontend:
+    runs-on: ubuntu-latest
+    name: Frontend
+    timeout-minutes: 30
+    # Skipped when either lint job fails or is cancelled.
+    needs: [linter, code-quality]
+
+    steps:
+      - name: Clone
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          check-latest: true
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Run Vitest
+        run: npm test
+
   tests:
     runs-on: ubuntu-latest
+    name: Server (Python ${{ matrix.python }}, frappe ${{ matrix.frappe }})
+    timeout-minutes: 90
+    # The bench build and the server suite start only after both lint jobs pass.
+    needs: [linter, code-quality]
+
     strategy:
+      # Each pair reports on its own; one red leg leaves the other running.
       fail-fast: false
-    name: Server
+      matrix:
+        # The interpreter is paired with the framework branch, not crossed with it.
+        # frappe version-15 declares requires-python >=3.10,<3.15; frappe
+        # version-16 declares >=3.14,<3.15.
+        include:
+          - python: '3.12'
+            frappe: version-15
+            erpnext: version-15
+            payments: version-15
+            webshop: version-15
+          - python: '3.14'
+            frappe: version-16
+            erpnext: version-16
+            payments: version-16
+            webshop: version-16
+
+    # bench reads CI when it renders the Procfile.
+    env:
+      CI: 'Yes'
+      FRAPPE_BRANCH: ${{ matrix.frappe }}
+      ERPNEXT_BRANCH: ${{ matrix.erpnext }}
+      PAYMENTS_BRANCH: ${{ matrix.payments }}
+      WEBSHOP_BRANCH: ${{ matrix.webshop }}
+      PYTHON_VERSION: ${{ matrix.python }}
+      # bench get-app runs yarn install, which would download the Cypress binary.
+      CYPRESS_INSTALL_BINARY: '0'
 
     services:
       redis-cache:
@@ -30,27 +203,32 @@ jobs:
       mariadb:
         image: mariadb:10.6
         env:
-          MYSQL_ROOT_PASSWORD: root
+          MARIADB_ROOT_PASSWORD: root
         ports:
           - 3306:3306
         options: --health-cmd="mariadb-admin ping" --health-interval=5s --health-timeout=2s --health-retries=3
 
     steps:
       - name: Clone
-        uses: actions/checkout@v3
-
-      - name: Find tests
-        run: |
-          echo "Finding tests"
-          grep -rn "def test" > /dev/null
+        uses: actions/checkout@v4
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        id: setup-python
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.14'
+          python-version: ${{ matrix.python }}
+
+      # Compiles on the interpreter the suite runs on, so it follows setup-python.
+      - name: Check for merge conflicts and syntax errors
+        run: |
+          "${{ steps.setup-python.outputs.python-path }}" -m compileall -q -f "${GITHUB_WORKSPACE}/frappe_paystack"
+          if grep -lr --exclude-dir=node_modules --exclude-dir=.git "^<<<<<<< " "${GITHUB_WORKSPACE}"; then
+            echo "::error::Found merge conflict markers"
+            exit 1
+          fi
 
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 24
           check-latest: true
@@ -59,52 +237,87 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/*requirements.txt', '**/pyproject.toml', '**/setup.py', '**/setup.cfg') }}
+          # The interpreter and the framework branch are in the key, so the two legs
+          # keep separate caches.
+          key: ${{ runner.os }}-py${{ matrix.python }}-${{ matrix.frappe }}-pip-${{ hashFiles('**/*requirements.txt', '**/pyproject.toml', '**/setup.py', '**/setup.cfg') }}
           restore-keys: |
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
-
-      - name: Get yarn cache directory path
-        id: yarn-cache-dir-path
-        run: 'echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT'
-
-      - uses: actions/cache@v4
-        id: yarn-cache
-        with:
-          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
+            ${{ runner.os }}-py${{ matrix.python }}-${{ matrix.frappe }}-pip-
+            ${{ runner.os }}-py${{ matrix.python }}-${{ matrix.frappe }}-
 
       - name: Install MariaDB Client
         run: |
           sudo apt update
-          sudo apt-get install mariadb-client
+          sudo apt-get install -y mariadb-client
 
-      - name: Setup
+      - name: Setup bench
         run: |
           pip install frappe-bench
-          bench init --skip-redis-config-generation --skip-assets --python "$(which python)" ~/frappe-bench
+          # setup-python reports the interpreter it installed; PATH lookups can find another.
+          bench init \
+            --skip-redis-config-generation \
+            --skip-assets \
+            --frappe-branch "${FRAPPE_BRANCH}" \
+            --python "${{ steps.setup-python.outputs.python-path }}" \
+            ~/frappe-bench
           mariadb --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL character_set_server = 'utf8mb4'"
           mariadb --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL collation_server = 'utf8mb4_unicode_ci'"
 
-      - name: Install
+      # A venv built on another interpreter measures other code, so the run stops here.
+      - name: Check the bench interpreter
         working-directory: /home/runner/frappe-bench
         run: |
-          bench get-app erpnext --branch version-16
-          bench get-app https://github.com/mymi14s/frappe_paystack --branch=version-16
-          bench setup requirements --dev
-          bench new-site --db-root-password root --admin-password admin test_site
-          bench --site test_site install-app erpnext
-          bench --site test_site install-app frappe_paystack
-          bench build
-        env:
-          CI: 'Yes'
+          ./env/bin/python -VV
+          FOUND="$(./env/bin/python -c 'import sys; print("%d.%d" % sys.version_info[:2])')"
+          echo "bench venv runs Python ${FOUND}, workflow asked for ${PYTHON_VERSION}"
+          if [ "${FOUND}" != "${PYTHON_VERSION}" ]; then
+            echo "::error::bench built its venv on Python ${FOUND}, not ${PYTHON_VERSION}"
+            exit 1
+          fi
 
+      - name: Install apps
+        working-directory: /home/runner/frappe-bench
+        run: |
+          bench get-app https://github.com/frappe/erpnext --branch "${ERPNEXT_BRANCH}" --resolve-deps
+          # frappe_paystack imports payments.utils.
+          bench get-app https://github.com/frappe/payments --branch "${PAYMENTS_BRANCH}"
+          # The storefront the webshop and portal suites run against.
+          bench get-app https://github.com/frappe/webshop --branch "${WEBSHOP_BRANCH}"
+          # actions/checkout leaves a detached HEAD; the branch names the commit.
+          git -C "${GITHUB_WORKSPACE}" checkout -B ci-run
+          # Installs the checked-out revision.
+          bench get-app frappe_paystack "${GITHUB_WORKSPACE}" --branch ci-run
+          bench setup requirements --dev
+          # frappe's dev dependencies pin coverage below this line on both branches,
+          # and their branch analysis differs; this wins.
+          ./env/bin/pip install --upgrade "coverage==${COVERAGE_VERSION}"
+          FOUND="$(./env/bin/python -c 'import coverage; print(coverage.__version__)')"
+          echo "bench venv runs coverage ${FOUND}"
+          if [ "${FOUND}" != "${COVERAGE_VERSION}" ]; then
+            echo "::error::coverage ${FOUND} is installed, not ${COVERAGE_VERSION}"
+            exit 1
+          fi
+
+      - name: Create site
+        working-directory: /home/runner/frappe-bench
+        run: |
+          bench new-site --set-default --db-root-password root --admin-password admin test_site
+          bench --site test_site install-app erpnext
+          bench --site test_site install-app payments
+          bench --site test_site install-app webshop
+          bench --site test_site install-app frappe_paystack
+          bench --site test_site set-config allow_tests true
+          bench build
+
+      # bench run-tests exits 0 when tests fail, so the wrapper reads the summary line.
       - name: Run Tests
         working-directory: /home/runner/frappe-bench
         run: |
-          bench --site test_site set-config allow_tests true
-          bench --site test_site run-tests --app frappe_paystack
+          bash apps/frappe_paystack/.github/scripts/run-tests-with-coverage.sh \
+            /home/runner/frappe-bench test_site
         env:
           TYPE: server
+
+      - name: Show bench output
+        if: ${{ always() }}
+        run: |
+          cat /home/runner/frappe-bench/logs/*.log || true

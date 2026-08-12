@@ -1,0 +1,132 @@
+{
+ "actions": [],
+ "autoname": "field:payment_log",
+ "creation": "2026-07-31 20:45:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "reconciliation_date",
+  "payment_log",
+  "company",
+  "status",
+  "column_break_amounts",
+  "paystack_amount",
+  "frappe_amount",
+  "difference",
+  "section_break_details",
+  "mismatch_reason",
+  "reconciled_by",
+  "reconciled_at",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "reconciliation_date",
+   "fieldtype": "Date",
+   "label": "Reconciliation Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "payment_log",
+   "fieldtype": "Link",
+   "label": "Payment Log",
+   "options": "Paystack Payment Log",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "read_only": 1,
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "default": "Pending",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "label": "Status",
+   "options": "Pending\nReconciled\nMismatch\nManual Override",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_amounts",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "paystack_amount",
+   "fieldtype": "Currency",
+   "label": "Paystack Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "frappe_amount",
+   "fieldtype": "Currency",
+   "label": "Frappe Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "difference",
+   "fieldtype": "Currency",
+   "label": "Difference",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_details",
+   "fieldtype": "Section Break",
+   "label": "Details"
+  },
+  {
+   "fieldname": "mismatch_reason",
+   "fieldtype": "Small Text",
+   "label": "Mismatch Reason"
+  },
+  {
+   "fieldname": "reconciled_by",
+   "fieldtype": "Link",
+   "label": "Reconciled By",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "reconciled_at",
+   "fieldtype": "Datetime",
+   "label": "Reconciled At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Text Editor",
+   "label": "Notes"
+  }
+ ],
+ "in_create": 1,
+ "links": [],
+ "modified": "2026-07-31 20:45:00.000000",
+ "modified_by": "Administrator",
+ "module": "Frappe Paystack",
+ "name": "Paystack Reconciliation Log",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "read": 1,
+   "report": 1,
+   "role": "Accounts Manager"
+  },
+  {
+   "read": 1,
+   "role": "Accounts User"
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

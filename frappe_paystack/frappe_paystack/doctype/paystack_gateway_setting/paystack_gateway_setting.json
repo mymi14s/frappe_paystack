@@ -9,13 +9,24 @@
  "field_order": [
   "gateway",
   "enabled",
+  "test_mode",
   "secret_key",
   "public_key",
+  "webhook_secret",
   "column_break_0nsce",
   "company",
   "currency",
   "suspense_account",
-  "mode_of_payment"
+  "mode_of_payment",
+  "checkout_mode",
+  "payment_link_validity_hours",
+  "auto_refund_on_credit_note",
+  "allowed_webhook_ips",
+  "section_break_settlement",
+  "settlement_bank_account",
+  "paystack_fee_account",
+  "column_break_settlement",
+  "auto_charge_subscriptions"
  ],
  "fields": [
   {
@@ -39,10 +50,23 @@
    "reqd": 1
   },
   {
+   "fieldname": "webhook_secret",
+   "fieldtype": "Password",
+   "label": "Webhook Secret",
+   "description": "Dedicated secret for verifying Paystack webhook signatures. If left empty, the Secret Key is used."
+  },
+  {
    "default": "0",
    "fieldname": "enabled",
    "fieldtype": "Check",
    "label": "Enabled"
+  },
+  {
+   "default": "0",
+   "fieldname": "test_mode",
+   "fieldtype": "Check",
+   "label": "Test Mode",
+   "description": "Required when the keys above are Paystack test keys (sk_test_/pk_test_), and refused when they are live keys. Webhook signatures and transactions are verified either way."
   },
   {
    "fieldname": "column_break_0nsce",
@@ -76,6 +100,65 @@
    "label": "Mode of Payment",
    "options": "Mode of Payment",
    "reqd": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "auto_refund_on_credit_note",
+   "fieldtype": "Check",
+   "label": "Auto Refund on Credit Note",
+   "description": "Automatically initiate a Paystack refund when a credit note is submitted against a Paystack-paid invoice."
+  },
+  {
+   "fieldname": "allowed_webhook_ips",
+   "fieldtype": "Small Text",
+   "label": "Allowed Webhook IPs",
+   "description": "One IP address or CIDR range per line. Only requests from these are accepted for the webhook; empty allows all. Paystack currently sends from 52.31.139.75, 52.49.173.169 and 52.214.14.220 - confirm against https://paystack.com/docs/payments/webhooks before entering them, because a stale list rejects live payments."
+  },
+  {
+   "default": "Inline",
+   "description": "Inline shows the Paystack popup on the app's own checkout page. Hosted redirects the customer to a Paystack-hosted page.",
+   "fieldname": "checkout_mode",
+   "fieldtype": "Select",
+   "label": "Checkout Mode",
+   "options": "Inline\nHosted"
+  },
+  {
+   "default": "0",
+   "description": "Hours a checkout link stays payable. 0 keeps links valid indefinitely.",
+   "fieldname": "payment_link_validity_hours",
+   "fieldtype": "Int",
+   "label": "Payment Link Validity (Hours)",
+   "non_negative": 1
+  },
+  {
+   "fieldname": "section_break_settlement",
+   "fieldtype": "Section Break",
+   "label": "Settlement"
+  },
+  {
+   "description": "The bank account Paystack pays out to. Set this and the fee account to have each Paystack payout post a journal entry clearing the suspense account.",
+   "fieldname": "settlement_bank_account",
+   "fieldtype": "Link",
+   "label": "Settlement Bank Account",
+   "options": "Account"
+  },
+  {
+   "description": "Expense account Paystack's fees are booked to when a payout is settled. The fee is recognised at payout, not at capture.",
+   "fieldname": "paystack_fee_account",
+   "fieldtype": "Link",
+   "label": "Paystack Fee Account",
+   "options": "Account"
+  },
+  {
+   "fieldname": "column_break_settlement",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "Charge a customer's saved card for invoices an ERPNext Subscription raises. ERPNext keeps the billing calendar; Paystack only collects. Leave off to collect subscription invoices by hand.",
+   "fieldname": "auto_charge_subscriptions",
+   "fieldtype": "Check",
+   "label": "Auto Charge Subscription Invoices"
   }
  ],
  "links": [],

@@ -1,0 +1,340 @@
+/* Paystack checkout page. Uses Frappe's CSS variables so it follows the
+   active website theme, including dark mode. */
+
+.ps-checkout {
+	display: flex;
+	justify-content: center;
+	padding: 2rem 1rem 4rem;
+}
+
+.ps-checkout [v-cloak],
+[v-cloak] {
+	display: none;
+}
+
+.ps-card {
+	width: 100%;
+	max-width: 30rem;
+	background: var(--card-bg, #fff);
+	border: 1px solid var(--border-color, #e2e6e9);
+	border-radius: var(--border-radius-lg, 12px);
+	box-shadow: var(--shadow-base, 0 1px 3px rgba(0, 0, 0, 0.08));
+	overflow: hidden;
+}
+
+.ps-card--message {
+	text-align: center;
+	padding: 2.5rem 1.75rem;
+}
+
+/* Header ------------------------------------------------------------- */
+
+.ps-head {
+	padding: 2rem 1.75rem 1.5rem;
+	text-align: center;
+	border-bottom: 1px solid var(--border-color, #e2e6e9);
+}
+
+.ps-eyebrow {
+	margin: 0 0 0.5rem;
+	font-size: 0.75rem;
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--text-muted, #7a8590);
+}
+
+.ps-amount {
+	margin: 0;
+	font-size: 2.25rem;
+	font-weight: 700;
+	line-height: 1.2;
+	color: var(--text-color, #1f272e);
+	font-variant-numeric: tabular-nums;
+}
+
+.ps-converted {
+	margin: 0.4rem 0 0;
+	font-size: 0.85rem;
+	color: var(--text-muted, #7a8590);
+	font-variant-numeric: tabular-nums;
+}
+
+.ps-title {
+	margin: 0 0 0.5rem;
+	font-size: 1.25rem;
+	font-weight: 600;
+	color: var(--text-color, #1f272e);
+}
+
+.ps-subtitle {
+	margin: 0;
+	color: var(--text-muted, #7a8590);
+	font-size: 0.9rem;
+	line-height: 1.5;
+}
+
+.ps-ref {
+	margin: 1rem 0 0;
+	font-size: 0.8rem;
+	color: var(--text-muted, #7a8590);
+}
+
+/* Status pill -------------------------------------------------------- */
+
+.ps-status {
+	display: inline-block;
+	margin-top: 0.9rem;
+	padding: 0.25rem 0.7rem;
+	border-radius: 999px;
+	font-size: 0.75rem;
+	font-weight: 600;
+}
+
+.ps-status--pending {
+	background: var(--orange-100, #fff3cd);
+	color: var(--orange-700, #8a5a00);
+}
+
+.ps-status--success {
+	background: var(--green-100, #d4edda);
+	color: var(--green-700, #1c7a34);
+}
+
+.ps-status--danger {
+	background: var(--red-100, #fbdada);
+	color: var(--red-700, #b02a37);
+}
+
+/* Detail rows -------------------------------------------------------- */
+
+.ps-details {
+	margin: 0;
+	padding: 1.25rem 1.75rem;
+}
+
+.ps-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	gap: 1rem;
+	padding: 0.55rem 0;
+	font-size: 0.9rem;
+}
+
+.ps-row dt {
+	margin: 0;
+	font-weight: 400;
+	color: var(--text-muted, #7a8590);
+	flex-shrink: 0;
+}
+
+.ps-row dd {
+	margin: 0;
+	text-align: right;
+	color: var(--text-color, #1f272e);
+	word-break: break-word;
+}
+
+.ps-row--total {
+	margin-top: 0.5rem;
+	padding-top: 0.9rem;
+	border-top: 1px solid var(--border-color, #e2e6e9);
+	font-size: 1rem;
+}
+
+.ps-row--total dt,
+.ps-row--total dd {
+	font-weight: 600;
+	color: var(--text-color, #1f272e);
+}
+
+.ps-row--total dd {
+	font-variant-numeric: tabular-nums;
+}
+
+.ps-row code {
+	font-size: 0.8rem;
+	background: var(--control-bg, #f4f5f6);
+	padding: 0.1rem 0.35rem;
+	border-radius: 4px;
+}
+
+/* Alerts ------------------------------------------------------------- */
+
+.ps-alert {
+	margin: 0 1.75rem;
+	padding: 0.75rem 1rem;
+	border-radius: var(--border-radius-md, 6px);
+	font-size: 0.875rem;
+	line-height: 1.45;
+}
+
+.ps-alert--info {
+	background: var(--blue-100, #e7f1ff);
+	color: var(--blue-700, #0b5ed7);
+}
+
+.ps-alert--success {
+	background: var(--green-100, #d4edda);
+	color: var(--green-700, #1c7a34);
+}
+
+.ps-alert--warning {
+	background: var(--orange-100, #fff3cd);
+	color: var(--orange-700, #8a5a00);
+}
+
+.ps-alert--danger {
+	background: var(--red-100, #fbdada);
+	color: var(--red-700, #b02a37);
+}
+
+/* Actions ------------------------------------------------------------ */
+
+.ps-actions {
+	padding: 1.25rem 1.75rem 1.75rem;
+}
+
+.ps-field {
+	display: block;
+	margin-bottom: 1rem;
+}
+
+.ps-label {
+	display: block;
+	margin-bottom: 0.35rem;
+	font-size: 0.8rem;
+	font-weight: 500;
+	color: var(--text-muted, #7a8590);
+}
+
+.ps-input {
+	width: 100%;
+	padding: 0.6rem 0.75rem;
+	font-size: 0.95rem;
+	color: var(--text-color, #1f272e);
+	background: var(--control-bg, #f4f5f6);
+	border: 1px solid var(--border-color, #e2e6e9);
+	border-radius: var(--border-radius-md, 6px);
+}
+
+.ps-input:focus {
+	outline: none;
+	border-color: var(--primary, #2490ef);
+	box-shadow: 0 0 0 2px var(--blue-100, #e7f1ff);
+}
+
+.ps-input--invalid {
+	border-color: var(--red-500, #e24c4c);
+}
+
+.ps-hint {
+	display: block;
+	margin-top: 0.3rem;
+	font-size: 0.75rem;
+	color: var(--red-600, #c0392b);
+}
+
+.ps-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	width: 100%;
+	padding: 0.8rem 1rem;
+	font-size: 0.95rem;
+	font-weight: 600;
+	color: #fff;
+	background: var(--primary, #2490ef);
+	border: none;
+	border-radius: var(--border-radius-md, 6px);
+	cursor: pointer;
+	transition: opacity 0.15s ease;
+}
+
+.ps-button:hover:not(:disabled) {
+	opacity: 0.9;
+}
+
+.ps-button:disabled {
+	opacity: 0.55;
+	cursor: not-allowed;
+}
+
+.ps-spinner {
+	width: 0.9rem;
+	height: 0.9rem;
+	border: 2px solid rgba(255, 255, 255, 0.4);
+	border-top-color: #fff;
+	border-radius: 50%;
+	animation: ps-spin 0.7s linear infinite;
+}
+
+@keyframes ps-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.ps-spinner {
+		animation: none;
+	}
+}
+
+.ps-secure {
+	margin: 0.9rem 0 0;
+	text-align: center;
+	font-size: 0.75rem;
+	color: var(--text-muted, #7a8590);
+}
+
+.ps-closed {
+	margin: 0;
+	text-align: center;
+	color: var(--text-muted, #7a8590);
+	font-size: 0.9rem;
+	line-height: 1.5;
+}
+
+/* Message icons ------------------------------------------------------ */
+
+.ps-icon {
+	width: 3rem;
+	height: 3rem;
+	margin: 0 auto 1rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 50%;
+	font-size: 1.5rem;
+	font-weight: 700;
+}
+
+.ps-icon--error {
+	background: var(--red-100, #fbdada);
+	color: var(--red-700, #b02a37);
+}
+
+@media (max-width: 480px) {
+	.ps-checkout {
+		padding: 1rem 0.75rem 3rem;
+	}
+
+	.ps-amount {
+		font-size: 1.85rem;
+	}
+
+	.ps-head,
+	.ps-details,
+	.ps-actions {
+		padding-left: 1.15rem;
+		padding-right: 1.15rem;
+	}
+
+	.ps-alert {
+		margin-left: 1.15rem;
+		margin-right: 1.15rem;
+	}
+}

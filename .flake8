@@ -1,0 +1,16 @@
+[flake8]
+max-line-length = 110
+
+# W503/E203 flag wrapping that black produces.
+extend-ignore = W503, E203
+
+exclude =
+    .git,
+    __pycache__,
+    node_modules,
+    build,
+    dist,
+    *.egg-info,
+    cypress,
+    js-tests,
+    frappe_paystack/public/js/vue.global.js

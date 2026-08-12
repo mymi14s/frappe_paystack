@@ -1,0 +1,18 @@
+{
+ "actions": [],
+ "creation": "2026-07-30 00:00:00.000000",
+ "doctype": "Print Format",
+ "document_type": "Paystack Refund Log",
+ "html": "<div class=\"container\">\n    <h2 style=\"text-align: center;\">Refund Receipt</h2>\n    <hr>\n    <table class=\"table table-bordered\">\n        <tbody>\n            <tr>\n                <td><strong>Refund Reference</strong></td>\n                <td>{{ doc.name }}</td>\n            </tr>\n            <tr>\n                <td><strong>Payment Log</strong></td>\n                <td>{{ doc.payment_log }}</td>\n            </tr>\n            <tr>\n                <td><strong>Transaction ID</strong></td>\n                <td>{{ doc.transaction_id }}</td>\n            </tr>\n            <tr>\n                <td><strong>Refund Amount</strong></td>\n                <td>{{ doc.currency }} {{ doc.refund_amount }}</td>\n            </tr>\n            <tr>\n                <td><strong>Status</strong></td>\n                <td>{{ doc.status }}</td>\n            </tr>\n            <tr>\n                <td><strong>Refund Reason</strong></td>\n                <td>{{ doc.refund_reason or \"N/A\" }}</td>\n            </tr>\n            <tr>\n                <td><strong>Date</strong></td>\n                <td>{{ frappe.utils.formatdate(doc.modified) }}</td>\n            </tr>\n        </tbody>\n    </table>\n    <p style=\"text-align: center; margin-top: 20px;\">Thank you for your business.</p>\n</div>",
+ "line_breaks": 0,
+ "modified": "2026-07-30 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Frappe Paystack",
+ "name": "Paystack Refund Receipt",
+ "owner": "Administrator",
+ "print_format_builder": 0,
+ "print_format_type": "Jinja",
+ "raw_printing": 0,
+ "row_format": "Dynamic",
+ "standard": "Yes"
+}
