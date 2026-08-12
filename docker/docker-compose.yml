@@ -1,0 +1,122 @@
+# Runs the jobs in .github/workflows/ci.yml against the local checkout.
+#
+#   docker compose -f docker/docker-compose.yml run --rm quality
+#   docker compose -f docker/docker-compose.yml run --rm security
+#   docker compose -f docker/docker-compose.yml run --rm server-v15
+#   docker compose -f docker/docker-compose.yml run --rm server-v16
+#
+# The checkout is mounted read-only. Nothing here reaches a bench on the host.
+
+name: frappe-paystack-ci
+
+x-server: &server
+  depends_on:
+    mariadb:
+      condition: service_healthy
+    redis-cache:
+      condition: service_started
+    redis-queue:
+      condition: service_started
+
+x-server-env: &server-env
+  # bench reads CI when it renders the Procfile.
+  CI: 'Yes'
+  COVERAGE_VERSION: '7.15.2'
+
+services:
+  mariadb:
+    image: mariadb:10.6
+    profiles: [server, v15, v16]
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --skip-character-set-client-handshake
+    healthcheck:
+      test: ['CMD', 'mariadb-admin', 'ping', '-uroot', '-proot']
+      interval: 5s
+      timeout: 2s
+      retries: 20
+    volumes:
+      - mariadb-data:/var/lib/mysql
+
+  redis-cache:
+    image: redis:alpine
+    profiles: [server, v15, v16]
+
+  redis-queue:
+    image: redis:alpine
+    profiles: [server, v15, v16]
+
+  # The Python 3.12 / version-15 matrix leg.
+  server-v15:
+    <<: *server
+    profiles: [server, v15]
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: bench
+      args:
+        PYTHON_VERSION: '3.12'
+    environment:
+      <<: *server-env
+      PYTHON_VERSION: '3.12'
+      # A site per leg, so the two can run at the same time.
+      SITE_NAME: test_site_v15
+      FRAPPE_BRANCH: version-15
+      ERPNEXT_BRANCH: version-15
+      PAYMENTS_BRANCH: version-15
+      WEBSHOP_BRANCH: version-15
+    volumes:
+      - ../:/workspace:ro
+      - cache-v15:/home/runner/.cache
+
+  # The Python 3.14 / version-16 matrix leg.
+  server-v16:
+    <<: *server
+    profiles: [server, v16]
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: bench
+      args:
+        PYTHON_VERSION: '3.14'
+    environment:
+      <<: *server-env
+      PYTHON_VERSION: '3.14'
+      SITE_NAME: test_site_v16
+      FRAPPE_BRANCH: version-16
+      ERPNEXT_BRANCH: version-16
+      PAYMENTS_BRANCH: version-16
+      WEBSHOP_BRANCH: version-16
+    volumes:
+      - ../:/workspace:ro
+      - cache-v16:/home/runner/.cache
+
+  quality:
+    profiles: [quality]
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: quality
+    volumes:
+      - ../:/workspace:ro
+      - cache-quality:/root/.cache
+
+  security:
+    profiles: [security]
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: security
+    volumes:
+      - ../:/workspace:ro
+      - cache-security:/root/.cache
+
+volumes:
+  mariadb-data:
+  cache-v15:
+  cache-v16:
+  cache-quality:
+  cache-security:

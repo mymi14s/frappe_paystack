@@ -5,3 +5,14 @@
 tags
 node_modules
 __pycache__
+cypress/screenshots
+cypress/videos
+cypress/downloads
+
+# Tool caches and coverage data.
+.mypy_cache
+.ruff_cache
+.pytest_cache
+.coverage
+.coverage.*
+htmlcov

@@ -1,0 +1,166 @@
+{
+ "actions": [],
+ "autoname": "field:settlement_id",
+ "creation": "2026-08-02 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "settlement_id",
+  "company",
+  "status",
+  "settlement_date",
+  "currency",
+  "column_break_amounts",
+  "gross_amount",
+  "total_fees",
+  "deductions",
+  "net_amount",
+  "section_break_posting",
+  "journal_entry",
+  "integration_request",
+  "tab_break_errors",
+  "errors"
+ ],
+ "fields": [
+  {
+   "fieldname": "settlement_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Settlement ID",
+   "read_only": 1,
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company",
+   "read_only": 1,
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "default": "Pending",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Pending\nProcessed\nFailed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "settlement_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Settlement Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Data",
+   "label": "Currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_amounts",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "gross_amount",
+   "fieldtype": "Currency",
+   "label": "Gross Amount",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_fees",
+   "fieldtype": "Currency",
+   "label": "Total Fees",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "description": "Refunds Paystack has already paid out and held back from this settlement.",
+   "fieldname": "deductions",
+   "fieldtype": "Currency",
+   "label": "Deductions",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "net_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Net Amount",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_posting",
+   "fieldtype": "Section Break",
+   "label": "Posting"
+  },
+  {
+   "fieldname": "journal_entry",
+   "fieldtype": "Link",
+   "label": "Journal Entry",
+   "no_copy": 1,
+   "options": "Journal Entry",
+   "read_only": 1
+  },
+  {
+   "fieldname": "integration_request",
+   "fieldtype": "Link",
+   "label": "Integration Request",
+   "no_copy": 1,
+   "options": "Integration Request",
+   "read_only": 1
+  },
+  {
+   "fieldname": "tab_break_errors",
+   "fieldtype": "Tab Break",
+   "label": "Errors"
+  },
+  {
+   "fieldname": "errors",
+   "fieldtype": "Small Text",
+   "label": "Errors",
+   "read_only": 1
+  }
+ ],
+ "in_create": 1,
+ "links": [],
+ "modified": "2026-08-02 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Frappe Paystack",
+ "name": "Paystack Settlement",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accounts Manager"
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accounts User"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

@@ -1,0 +1,19 @@
+{
+	"event": "settlement.success",
+	"data": {
+		"id": "",
+		"domain": "test",
+		"status": "success",
+		"currency": "",
+		"integration": 900100,
+		"total_amount": 0,
+		"effective_amount": 0,
+		"total_fees": 0,
+		"total_processed": 0,
+		"deductions": 0,
+		"settlement_date": "",
+		"settled_by": null,
+		"createdAt": "",
+		"updatedAt": ""
+	}
+}

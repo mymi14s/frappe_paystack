@@ -1,0 +1,40 @@
+<div style="font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; color: #1f272e;">
+	<h2 style="margin: 0 0 4px;">{{ _("Complete your payment") }}</h2>
+	<p style="margin: 0 0 20px; color: #6a7581;">{{ invoice.customer_name or invoice.customer }}</p>
+
+	<table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+		<thead>
+			<tr style="text-align: left; border-bottom: 1px solid #e2e6e9;">
+				<th style="padding: 8px 0;">{{ _("Item") }}</th>
+				<th style="padding: 8px 0; text-align: right;">{{ _("Qty") }}</th>
+				<th style="padding: 8px 0; text-align: right;">{{ _("Amount") }}</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for item in items %}
+			<tr style="border-bottom: 1px solid #f1f3f5;">
+				<td style="padding: 8px 0;">{{ item.item_name or item.item_code }}</td>
+				<td style="padding: 8px 0; text-align: right;">{{ item.qty }}</td>
+				<td style="padding: 8px 0; text-align: right;">
+					{{ frappe.utils.fmt_money(item.amount, currency=invoice.currency) }}
+				</td>
+			</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+
+	<p style="font-size: 18px; margin: 0 0 24px;">
+		<strong>{{ _("Amount due") }}: {{ amount }}</strong>
+	</p>
+
+	<a href="{{ url }}"
+		style="display: inline-block; background: #0b8ce9; color: #fff; text-decoration: none;
+		padding: 12px 24px; border-radius: 6px; font-weight: 600;">
+		{{ _("Pay now") }}
+	</a>
+
+	<p style="margin-top: 24px; color: #8d959e; font-size: 13px;">
+		{{ _("Reference") }}: {{ invoice.name }}<br>
+		{{ _("Payments are processed securely by Paystack.") }}
+	</p>
+</div>

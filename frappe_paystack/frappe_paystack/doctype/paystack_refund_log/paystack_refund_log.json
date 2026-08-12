@@ -1,0 +1,171 @@
+{
+ "actions": [],
+ "creation": "2026-07-30 00:00:00.000000",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "payment_log",
+  "company",
+  "linked_doctype",
+  "linked_docname",
+  "transaction_id",
+  "column_break_refund",
+  "refund_amount",
+  "currency",
+  "status",
+  "refund_reference",
+  "refund_reason",
+  "section_break_response",
+  "reversal_payment_entry",
+  "integration_request",
+  "raw_response",
+  "tab_break_errors",
+  "errors"
+ ],
+ "fields": [
+  {
+   "fieldname": "payment_log",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Payment Log",
+   "options": "Paystack Payment Log",
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1,
+   "fetch_from": "payment_log.company",
+   "read_only": 1
+  },
+  {
+   "fieldname": "linked_doctype",
+   "fieldtype": "Data",
+   "label": "Linked Doctype"
+  },
+  {
+   "fieldname": "linked_docname",
+   "fieldtype": "Data",
+   "label": "Linked Docname"
+  },
+  {
+   "fieldname": "transaction_id",
+   "fieldtype": "Data",
+   "label": "Transaction ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_refund",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "refund_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Refund Amount",
+   "reqd": 1
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Data",
+   "label": "Currency",
+   "read_only": 1
+  },
+  {
+   "default": "Pending",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Status",
+   "options": "Pending\nProcessed\nCompleted\nFailed"
+  },
+  {
+   "fieldname": "refund_reference",
+   "fieldtype": "Data",
+   "label": "Refund Reference",
+   "read_only": 1
+  },
+  {
+   "fieldname": "refund_reason",
+   "fieldtype": "Small Text",
+   "label": "Refund Reason"
+  },
+  {
+   "fieldname": "section_break_response",
+   "fieldtype": "Section Break",
+   "label": "Response"
+  },
+  {
+   "fieldname": "reversal_payment_entry",
+   "fieldtype": "Link",
+   "label": "Reversal Payment Entry",
+   "options": "Payment Entry",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "integration_request",
+   "fieldtype": "Link",
+   "label": "Integration Request",
+   "options": "Integration Request",
+   "read_only": 1,
+   "no_copy": 1
+  },
+  {
+   "fieldname": "raw_response",
+   "fieldtype": "Text",
+   "label": "Raw Response",
+   "options": "JSON",
+   "read_only": 1
+  },
+  {
+   "fieldname": "tab_break_errors",
+   "fieldtype": "Tab Break",
+   "label": "Errors"
+  },
+  {
+   "fieldname": "errors",
+   "fieldtype": "Small Text",
+   "label": "Errors",
+   "read_only": 1
+  }
+ ],
+ "in_create": 1,
+ "links": [],
+ "modified": "2026-07-30 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Frappe Paystack",
+ "name": "Paystack Refund Log",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "write": 1
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accounts Manager"
+  },
+  {
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Accounts User"
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

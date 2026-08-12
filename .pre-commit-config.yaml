@@ -1,0 +1,63 @@
+exclude: 'node_modules/|^\.git/|frappe_paystack/public/js/vue\.global\.js'
+default_stages: [pre-commit]
+fail_fast: false
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+        files: "frappe_paystack.*"
+        exclude: ".*json$|.*txt$|.*csv|.*md|.*svg"
+      - id: check-merge-conflict
+      - id: check-ast
+      - id: check-json
+      - id: check-toml
+      - id: check-yaml
+      - id: debug-statements
+      - id: end-of-file-fixer
+        files: '\.py$'
+      - id: no-commit-to-branch
+        args: ['--branch', 'version-15']
+
+  # Reads [tool.isort] in pyproject.toml.
+  - repo: https://github.com/PyCQA/isort
+    rev: 8.0.1
+    hooks:
+      - id: isort
+        files: '\.py$'
+
+  # Reads [tool.black] in pyproject.toml.
+  - repo: https://github.com/psf/black
+    rev: 26.5.1
+    hooks:
+      - id: black
+        files: '\.py$'
+
+  # Reads .flake8.
+  - repo: https://github.com/PyCQA/flake8
+    rev: 7.3.0
+    hooks:
+      - id: flake8
+
+  # Reads [tool.pylint] in pyproject.toml.
+  - repo: https://github.com/pylint-dev/pylint
+    rev: v4.0.6
+    hooks:
+      - id: pylint
+        files: '\.py$'
+        args: ['--rcfile=pyproject.toml']
+
+  # Reads [tool.mypy] in pyproject.toml; the exclude is repeated for the hook.
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v2.3.0
+    hooks:
+      - id: mypy
+        files: '\.py$'
+        exclude: '^frappe_paystack/www/paystack-checkout/|^frappe_paystack/tests/'
+        args: ['--config-file=pyproject.toml']
+
+ci:
+    autoupdate_schedule: weekly
+    skip: [no-commit-to-branch]
+    submodules: false

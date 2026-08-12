@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../../apps/frappe_paystack/frappe_paystack/public/js/paystack_cart_guard.bundle.js"],
+  "sourcesContent": ["/** Guard the Webshop cart's Pay button against a repeated request. */\nfrappe.ready(() => {\n\tconst payment_button = document.getElementById(\"pay-for-order\");\n\n\tif (!payment_button) {\n\t\treturn;\n\t}\n\n\tlet navigating = false;\n\n\tpayment_button.addEventListener(\"click\", (event) => {\n\t\tif (navigating) {\n\t\t\tevent.preventDefault();\n\t\t\treturn;\n\t\t}\n\n\t\tnavigating = true;\n\t\tpayment_button.classList.add(\"disabled\");\n\t\tpayment_button.setAttribute(\"aria-disabled\", \"true\");\n\t\tpayment_button.textContent = __(\"Redirecting to payment...\");\n\t});\n});\n"],
+  "mappings": "MACA,OAAO,MAAM,IAAM,CAClB,IAAMA,EAAiB,SAAS,eAAe,eAAe,EAE9D,GAAI,CAACA,EACJ,OAGD,IAAIC,EAAa,GAEjBD,EAAe,iBAAiB,QAAUE,GAAU,CACnD,GAAID,EAAY,CACfC,EAAM,eAAe,EACrB,MACD,CAEAD,EAAa,GACbD,EAAe,UAAU,IAAI,UAAU,EACvCA,EAAe,aAAa,gBAAiB,MAAM,EACnDA,EAAe,YAAc,GAAG,2BAA2B,CAC5D,CAAC,CACF,CAAC",
+  "names": ["payment_button", "navigating", "event"]
+}

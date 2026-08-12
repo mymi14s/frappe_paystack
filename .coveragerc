@@ -1,0 +1,28 @@
+# Run and report as one command, from sites/:
+#
+#   cd <bench>/sites
+#   ../env/bin/python -m coverage run --rcfile=../apps/frappe_paystack/.coveragerc \
+#       -m frappe.utils.bench_helper frappe --site <site> run-tests --app frappe_paystack \
+#   && ../env/bin/python -m coverage report --rcfile=../apps/frappe_paystack/.coveragerc
+
+[run]
+branch = True
+source_pkgs = frappe_paystack
+data_file = .coverage
+omit =
+    */tests/*
+    */test_*.py
+    */__init__.py
+    */public/*
+    */patches/*
+
+[report]
+# Measures the www page folders, which carry no __init__.py.
+include_namespace_packages = True
+show_missing = True
+skip_covered = False
+# Covers both line and branch coverage.
+fail_under = 100
+exclude_lines =
+    pragma: no cover
+    if TYPE_CHECKING:
