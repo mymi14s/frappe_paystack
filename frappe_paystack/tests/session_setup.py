@@ -118,6 +118,10 @@ def bill_the_test_company_in_a_paystack_currency() -> None:
     if frappe.db.exists("Company", TEST_COMPANY):
         frappe.db.set_value("Company", TEST_COMPANY, "default_currency", COMPANY_CURRENCY)
         frappe.db.set_value("Company", TEST_COMPANY, "country", COMPANY_COUNTRY)
+        # version-16 books every GL entry in the company's reporting currency and
+        # refuses to post without a rate from the default currency to it.
+        if frappe.get_meta("Company").has_field("reporting_currency"):
+            frappe.db.set_value("Company", TEST_COMPANY, "reporting_currency", COMPANY_CURRENCY)
 
     for account in frappe.get_all(
         "Account",
